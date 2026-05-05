@@ -1,0 +1,7 @@
+/*
+ * FILE: popup.css
+ * 1. WHAT: Styles for the extension popup.
+ * 2. WHY: Ensures the popup matches the AccessAI design system.
+ * 3. HOW: Included in popup.html.
+ */
+body { width: 300px; padding: 16px; font-family: 'Inter', sans-serif; background: #F7F6F2; }

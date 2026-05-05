@@ -1,0 +1,21 @@
+{
+  "name": "accessai",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names backend,frontend --kill-others-on-fail \"cd accessai-backend && npm run dev\" \"cd accessai-frontend && npm run dev\"",
+    "dev:backend": "cd accessai-backend && npm run dev",
+    "dev:frontend": "cd accessai-frontend && npm run dev",
+    "build": "cd accessai-frontend && npm run build",
+    "start": "cd accessai-backend && npm start",
+    "install-all": "cd accessai-backend && npm install && cd ../accessai-frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "postinstall": "npm run install-all",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.1",
+    "axios": "^1.16.0"
+  }
+}
