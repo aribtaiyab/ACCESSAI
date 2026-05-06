@@ -10,13 +10,15 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase';
 import Link from 'next/link';
-import { LogOut, Settings, BarChart3, MessageSquare, Image, Eye, Clock } from 'lucide-react';
+import { LogOut, Settings, BarChart3, MessageSquare, Eye, Clock } from 'lucide-react';
+import { useGlobalLoader } from '@/context/GlobalLoaderContext';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const supabase = createClient();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { setGlobalLoading } = useGlobalLoader();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -58,7 +60,6 @@ export default function DashboardLayout({ children }) {
   const navLinks = [
     { href: '/dashboard', icon: MessageSquare, label: 'Simplify Text', name: 'text' },
     { href: '/dashboard/text', icon: MessageSquare, label: 'Text Tools', name: 'text' },
-    { href: '/dashboard/image', icon: Image, label: 'Image Tools', name: 'image' },
     { href: '/dashboard/contrast', icon: Eye, label: 'Contrast', name: 'contrast' },
     { href: '/dashboard/org', icon: BarChart3, label: 'Org Audit', name: 'org' },
     { href: '/dashboard/history', icon: Clock, label: 'History', name: 'history' },
@@ -82,6 +83,7 @@ export default function DashboardLayout({ children }) {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => setGlobalLoading(true)}
                 className="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 text-textSecondary dark:text-gray-300 hover:text-textPrimary dark:hover:text-white transition"
               >
                 <Icon size={20} />

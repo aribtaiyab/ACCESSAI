@@ -49,13 +49,14 @@ exports.saveHistory = async (req, res) => {
     const userId = req.user?.id;
     const { type, input_text, output_text } = req.body;
 
-    console.log(`📝 [HISTORY] Save request received`);
-    console.log(`📝 [HISTORY] User ID: ${userId}`);
-    console.log(`📝 [HISTORY] Type: ${type}`);
-    console.log(`📝 [HISTORY] Input length: ${input_text?.length}`);
-    console.log(`📝 [HISTORY] Output length: ${output_text?.length}`);
+    // Fallback if frontend sends different casing
+    const input = input_text || req.body.input;
+    const output = output_text || req.body.output;
 
-    if (!userId || !type || !input_text || !output_text) {
+    console.log(`📝 [HISTORY] Save request received`);
+    console.log("Saving history:", input);
+
+    if (!userId || !type || !input || !output) {
       console.error(`❌ [HISTORY] Missing required fields`);
       return res.status(400).json({ success: false, error: 'User ID, type, input text, and output text are required' });
     }
@@ -68,7 +69,13 @@ exports.saveHistory = async (req, res) => {
     console.log(`💾 [HISTORY] Inserting into database...`);
     const { data, error } = await supabase
       .from('history')
-      .insert([{ user_id: userId, type, input_text, output_text }]);
+      .insert([{ 
+        user_id: userId, 
+        type, 
+        input: input, 
+        output: output,
+        created_at: new Date()
+      }]);
 
     if (error) {
       console.error(`❌ [HISTORY] Supabase insert error:`, error);

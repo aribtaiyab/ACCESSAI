@@ -4,56 +4,55 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { runAudit, getAudits } from '@/lib/api';
+import { useGlobalLoader } from '@/context/GlobalLoaderContext';
 
-// ─── LoadingOverlay (consistent with other tools) ───────────────────────────
-function LoadingOverlay({ message }) {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(6px)',
-        backgroundColor: 'rgba(0,0,0,0.35)',
-        animation: 'fadeIn 0.25s ease',
-      }}
-    >
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes pulse { 0%,100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.18); opacity: 1; } }
-        @keyframes dotBounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-10px); } }
-      `}</style>
+const getWebsiteName = (fullUrl) => {
+  try {
+    const parsed = new URL(fullUrl);
+    return parsed.hostname.replace('www.', '');
+  } catch {
+    return fullUrl;
+  }
+};
 
-      <div style={{
-        width: 72, height: 72, borderRadius: '50%',
-        border: '4px solid #F5C518',
-        boxShadow: '0 0 24px #F5C51888',
-        animation: 'pulse 1.4s ease-in-out infinite',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 32, marginBottom: 20,
-      }}>
-        🔍
-      </div>
+const getScoreColor = (score) => {
+  if (score >= 80) return 'text-green-600';
+  if (score >= 50) return 'text-yellow-500';
+  return 'text-red-600';
+};
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {[0, 1, 2].map((i) => (
-          <div key={i} style={{
-            width: 10, height: 10, borderRadius: '50%', backgroundColor: '#F5C518',
-            animation: `dotBounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-          }} />
-        ))}
-      </div>
+const getWcagExplanation = (level) => {
+  if (level === 'AAA') return 'Excellent accessibility (highest standard)';
+  if (level === 'AA') return 'Good accessibility (recommended standard)';
+  if (level === 'A') return 'Basic accessibility';
+  return 'Needs improvement';
+};
 
-      <p style={{ color: '#fff', fontWeight: 600, fontSize: 16, letterSpacing: 0.5, textAlign: 'center' }}>
-        {message}
-      </p>
-    </div>
-  );
-}
+const calculatePercentages = (issues) => {
+  if (!issues || issues.length === 0) return { critical: 0, serious: 0, minor: 0 };
+  let critical = 0, serious = 0, minor = 0;
+  issues.forEach(issue => {
+    const sev = issue.severity?.toLowerCase();
+    if (sev === 'critical') critical++;
+    else if (sev === 'serious') serious++;
+    else minor++;
+  });
+  const total = issues.length;
+  return {
+    critical: Math.round((critical / total) * 100),
+    serious: Math.round((serious / total) * 100),
+    minor: Math.round((minor / total) * 100)
+  };
+};
+
+const getSummaryMessage = (percentages, issuesCount) => {
+  if (issuesCount === 0) return 'No major accessibility issues found.';
+  if (percentages.critical >= 20) return 'This website has critical accessibility issues that need immediate attention.';
+  if (percentages.serious >= 30) return 'This website has some serious accessibility issues. Improving contrast and structure is recommended.';
+  return 'This website has good accessibility overall, but has some minor issues to improve.';
+};
+
+// Local LoadingOverlay removed in favor of global loader
 
 export default function OrgPage() {
   const [url, setUrl] = useState('');
@@ -62,6 +61,7 @@ export default function OrgPage() {
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const { setGlobalLoading } = useGlobalLoader();
 
   useEffect(() => {
     fetchHistory();
@@ -90,6 +90,7 @@ export default function OrgPage() {
 
     setResult(null);
     setLoading(true);
+    setGlobalLoading(true);
     setLoadingMessage('Scanning website...');
 
     // Simulate loading steps as requested
@@ -113,7 +114,6 @@ export default function OrgPage() {
       const res = await runAudit(url);
       
       console.log("API Response received:", res);
-      clearInterval(interval);
       
       if (res.success) {
         setResult(res.data);
@@ -124,17 +124,17 @@ export default function OrgPage() {
       }
     } catch (err) {
       console.error("Audit API call failed:", err);
-      clearInterval(interval);
       const errorMsg = err.response?.data?.error || err.message || 'Audit failed. The site might be blocking us.';
       toast.error(errorMsg);
     } finally {
+      clearInterval(interval);
       setLoading(false);
+      setGlobalLoading(false);
     }
   };
 
   return (
     <main className="min-h-screen bg-background text-textPrimary px-6 py-10 md:px-10">
-      {loading && <LoadingOverlay message={loadingMessage} />}
       
       <div className="mx-auto max-w-5xl">
         <header className="mb-10">
@@ -173,76 +173,108 @@ export default function OrgPage() {
         {/* Result Section */}
         {result && (
           <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-8 pb-6 border-b border-border text-center">
+              <h2 className="text-3xl font-bold">Audit Report for <span className="text-primary">{getWebsiteName(url)}</span></h2>
+              <div className="mt-4 max-w-2xl mx-auto p-4 bg-gray-50 border border-border rounded-xl">
+                <p className="text-lg font-medium text-textPrimary">
+                  {getSummaryMessage(calculatePercentages(result.issues), result.issues?.length || 0)}
+                </p>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               {/* Score Card */}
               <div className="bg-white p-8 rounded-3xl border border-border shadow-sm flex flex-col items-center justify-center text-center">
                 <h3 className="text-textSecondary font-bold uppercase tracking-wider text-xs mb-2">Accessibility Score</h3>
-                <div className={`text-7xl font-black ${result.score >= 90 ? 'text-success' : result.score >= 70 ? 'text-primary' : 'text-error'}`}>
-                  {result.score}
+                <div className={`text-7xl font-black ${getScoreColor(result.score)}`}>
+                  {result.score} <span className="text-3xl text-textSecondary font-bold">/ 100</span>
                 </div>
-                <div className="mt-2 font-semibold text-textSecondary">out of 100</div>
               </div>
 
               {/* WCAG Card */}
               <div className="bg-white p-8 rounded-3xl border border-border shadow-sm flex flex-col items-center justify-center text-center">
                 <h3 className="text-textSecondary font-bold uppercase tracking-wider text-xs mb-2">WCAG Compliance</h3>
-                <div className={`text-6xl font-black ${result.wcagLevel === 'AAA' ? 'text-success' : result.wcagLevel === 'Fail' ? 'text-error' : 'text-primary'}`}>
+                <div className={`text-5xl font-black ${result.wcagLevel === 'AAA' ? 'text-green-600' : result.wcagLevel === 'Fail' ? 'text-red-600' : 'text-primary'}`}>
                   {result.wcagLevel}
                 </div>
-                <div className="mt-2 font-semibold text-textSecondary">Compliance Level</div>
+                <div className="mt-3 text-sm font-semibold text-textSecondary">{getWcagExplanation(result.wcagLevel)}</div>
               </div>
 
-              {/* Summary Card */}
-              <div className="bg-white p-8 rounded-3xl border border-border shadow-sm flex flex-col items-center justify-center text-center">
-                <h3 className="text-textSecondary font-bold uppercase tracking-wider text-xs mb-2">Total Issues</h3>
-                <div className="text-6xl font-black text-textPrimary">
-                  {result.issues.length}
-                </div>
-                <div className="mt-2 font-semibold text-textSecondary">Issues Detected</div>
+              {/* Percentage Breakdown Card */}
+              <div className="bg-white p-6 rounded-3xl border border-border shadow-sm flex flex-col justify-center">
+                <h3 className="text-textSecondary font-bold uppercase tracking-wider text-xs mb-4 text-center">Issue Breakdown</h3>
+                {result.issues && result.issues.length > 0 ? (() => {
+                  const p = calculatePercentages(result.issues);
+                  return (
+                    <div className="space-y-3 px-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-red-700">Critical</span>
+                        <span className="font-mono font-bold text-lg">{p.critical}%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-orange-700">Serious</span>
+                        <span className="font-mono font-bold text-lg">{p.serious}%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-blue-700">Minor</span>
+                        <span className="font-mono font-bold text-lg">{p.minor}%</span>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <div className="text-center text-textSecondary font-medium">No issues found</div>
+                )}
               </div>
             </div>
 
             {/* Issues Table */}
-            <div className="bg-white rounded-3xl border border-border shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-border bg-gray-50 flex justify-between items-center">
-                <h2 className="text-xl font-bold">Detected Issues</h2>
-                <span className="text-sm font-medium text-textSecondary bg-white px-3 py-1 rounded-full border border-border">
-                  Showing top {result.issues.length} issues
-                </span>
+            {(!result.issues || result.issues.length === 0) ? (
+              <div className="bg-white p-8 rounded-3xl border border-border shadow-sm text-center mb-8">
+                <h3 className="text-2xl font-bold text-green-600">No major accessibility issues found</h3>
+                <p className="text-textSecondary mt-2">Excellent! The scanned elements passed the accessibility checks.</p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-background">
-                      <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider border-b border-border">Rule</th>
-                      <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider border-b border-border">Severity</th>
-                      <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider border-b border-border">Element</th>
-                      <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider border-b border-border">Recommended Fix</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {result.issues.map((issue, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50 transition">
-                        <td className="px-6 py-4 font-semibold text-primary">{issue.rule}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter
-                            ${issue.severity === 'critical' ? 'bg-red-100 text-red-700' : 
-                              issue.severity === 'serious' ? 'bg-orange-100 text-orange-700' : 
-                              issue.severity === 'moderate' ? 'bg-yellow-100 text-yellow-700' : 
-                              'bg-blue-100 text-blue-700'}`}>
-                            {issue.severity}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-xs font-mono bg-gray-50 rounded m-2 block max-w-xs truncate" title={issue.element}>
-                          {issue.element}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-textSecondary">{issue.fix}</td>
+            ) : (
+              <div className="bg-white rounded-3xl border border-border shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-border bg-gray-50 flex justify-between items-center">
+                  <h2 className="text-xl font-bold">Detected Issues</h2>
+                  <span className="text-sm font-medium text-textSecondary bg-white px-3 py-1 rounded-full border border-border">
+                    Showing top {result.issues.length} issues
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-background">
+                        <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider border-b border-border">Rule</th>
+                        <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider border-b border-border">Severity</th>
+                        <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider border-b border-border">Element</th>
+                        <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider border-b border-border">Recommended Fix</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {result.issues.map((issue, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50 transition">
+                          <td className="px-6 py-4 font-semibold text-primary">{issue.rule}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter
+                              ${issue.severity === 'critical' ? 'bg-red-100 text-red-700' : 
+                                issue.severity === 'serious' ? 'bg-orange-100 text-orange-700' : 
+                                issue.severity === 'moderate' ? 'bg-yellow-100 text-yellow-700' : 
+                                'bg-blue-100 text-blue-700'}`}>
+                              {issue.severity}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-xs font-mono bg-gray-50 rounded m-2 block max-w-xs truncate" title={issue.element}>
+                            {issue.element}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-textSecondary">{issue.fix}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
           </section>
         )}
 

@@ -3,12 +3,15 @@
 import axios from 'axios';
 import { createBrowserClient } from '@supabase/ssr';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+// Create client only if variables exist to avoid crashing
+const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+  : { auth: { getSession: async () => ({ data: { session: null } }), signOut: () => {} } };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = 'http://localhost:5000'; // Hardcode as requested to remove env dependency
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -51,51 +54,33 @@ export const processTextWithAI = async (text, type) => {
     const response = await api.post('/api/chat', { text, type });
     const data = response.data;
     if (!response.status.toString().startsWith('2')) {
-      throw new Error(data.reply || data.message || 'API error');
+      throw new Error(data.result || data.message || 'API error');
     }
     console.log("API RESPONSE:", data);
     return data;
   } catch (error) {
-    if (error.response?.data?.reply) {
-      throw new Error(error.response.data.reply);
-    }
-    throw error;
+    const errorMsg = error.response?.data?.result || error.response?.data?.message || error.message;
+    console.error("API Fetch Error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
 export const simplifyText = (text) => processTextWithAI(text, 'simplify');
 export const explainText = (text) => processTextWithAI(text, 'explain');
 export const summarizeText = (text) => processTextWithAI(text, 'summarize');
-export const generateAltText = (text) => processTextWithAI(text, 'alttext');
 
-export const generateImageAltText = async (image) => {
-  try {
-    const response = await api.post('/api/alt-text', { image });
-    const data = response.data;
-    if (!response.status.toString().startsWith('2')) {
-      throw new Error(data.reply || data.message || 'API error');
-    }
-    console.log("IMAGE ALT TEXT RESPONSE:", data);
-    return data;
-  } catch (error) {
-    if (error.response?.data?.reply) {
-      throw new Error(error.response.data.reply);
-    }
-    throw error;
-  }
-};
+
 
 export const translateText = async (text, targetLanguage) => {
   try {
     const response = await api.post('/api/translate', { text, targetLanguage });
     const data = response.data;
     console.log("TRANSLATE RESPONSE:", data);
-    return data;
+    return { success: true, data: data.result };
   } catch (error) {
-    if (error.response?.data?.data) {
-      throw new Error(error.response.data.data);
-    }
-    throw error;
+    const errorMsg = error.response?.data?.result || error.response?.data?.message || error.message;
+    console.error("Translate Error:", errorMsg);
+    return { success: false, data: errorMsg };
   }
 };
 

@@ -34,12 +34,9 @@ const errorHandler = require('./middleware/errorHandler');
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - support multiple frontend ports
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:3001';
-const corsOrigins = corsOrigin.split(',').map(o => o.trim());
-
+// CORS configuration - Allow all origins for extension and local dev
 app.use(cors({
-  origin: corsOrigins,
+  origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -52,6 +49,16 @@ app.use(express.urlencoded({ limit: '5mb', extended: true }));
 // Rate limiter
 app.use(rateLimiter);
 
+// Timeout handling
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    if (!res.headersSent) {
+      res.status(408).json({ result: "Error: Request timeout" });
+    }
+  });
+  next();
+});
+
 // Import routes
 const aiRoutes = require('./routes/aiRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -62,6 +69,7 @@ const userRoutes = require('./routes/userRoutes');
 
 // Mount routes with correct prefixes - CRITICAL for avoiding 404 errors
 app.use('/api', aiRoutes);
+app.use('/', aiRoutes); // Support extension calling /simplify directly
 app.use('/api/auth', authRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/org', orgRoutes);

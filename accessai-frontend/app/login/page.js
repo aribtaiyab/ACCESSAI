@@ -12,15 +12,18 @@ import { useForm } from 'react-hook-form';
 import { createClient } from '@/utils/supabase';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { useGlobalLoader } from '@/context/GlobalLoaderContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
+  const { setGlobalLoading } = useGlobalLoader();
   const supabase = createClient();
 
   const onSubmit = async (data) => {
     setLoading(true);
+    setGlobalLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -34,8 +37,10 @@ export default function LoginPage() {
       }
     } catch (err) {
       toast.error('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+      setGlobalLoading(false);
     }
-    setLoading(false);
   };
 
   return (

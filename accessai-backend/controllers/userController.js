@@ -15,7 +15,29 @@ exports.getProfile = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    return res.json({ success: true, data: req.user });
+    // Fetch user profile from Supabase
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.log('Fetching profile from users table failed, falling back to auth user', error.message);
+      return res.json({ success: true, data: req.user });
+    }
+
+    // Return merged data to satisfy both usages
+    const mergedData = { 
+      ...req.user, 
+      ...data, 
+      user_metadata: { 
+        ...(req.user.user_metadata || {}), 
+        name: data.name || req.user.user_metadata?.name 
+      } 
+    };
+
+    return res.json({ success: true, data: mergedData });
   } catch (error) {
     console.error('Get profile error:', error);
     return res.status(500).json({ success: false, error: 'Failed to get profile' });
@@ -37,17 +59,33 @@ exports.updateProfile = async (req, res) => {
       updatePayload.user_metadata = { ...(req.user.user_metadata || {}), name };
     }
 
-    if (!supabase.auth.admin) {
-      return res.status(500).json({ success: false, error: 'Profile updates are currently disabled (Admin client not initialized)' });
+    console.log("Saving profile...");
+
+    // Update in users table
+    const { error: dbError } = await supabase
+      .from('users')
+      .update({ name, email })
+      .eq('id', userId);
+      
+    if (dbError) {
+      console.error('DB Update error:', dbError);
     }
 
-    const { data, error } = await supabase.auth.admin.updateUserById(userId, updatePayload);
+    let returnedUser = { id: userId, email, user_metadata: { name } };
 
-    if (error) {
-      return res.status(400).json({ success: false, error: error.message });
+    if (supabase.auth.admin) {
+      const { data, error } = await supabase.auth.admin.updateUserById(userId, updatePayload);
+      if (error) {
+        // If DB update succeeded but auth update failed, log it but don't fail completely
+        console.error('Auth Update error:', error);
+      } else if (data && data.user) {
+        returnedUser = data.user;
+      }
+    } else {
+      console.warn('Profile updates via auth.admin are currently disabled (Admin client not initialized)');
     }
 
-    return res.json({ success: true, data: data.user });
+    return res.json({ success: true, data: returnedUser });
 
   } catch (error) {
     console.error('Update profile error:', error);

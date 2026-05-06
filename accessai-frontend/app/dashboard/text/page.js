@@ -10,8 +10,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { simplifyText, explainText, summarizeText, generateAltText, translateText, saveHistory } from '@/lib/api';
+import { simplifyText, explainText, summarizeText, translateText, saveHistory } from '@/lib/api';
 import { useSettings } from '@/context/SettingsContext';
+import { useGlobalLoader } from '@/context/GlobalLoaderContext';
 
 // ─── Language map for Web Speech API ────────────────────────────────────────
 const LANG_CODE_MAP = {
@@ -81,57 +82,7 @@ const LANGUAGE_GROUPS = [
   { label: '🌺 Southeast Asian',langs: ['Indonesian','Malay','Thai','Vietnamese','Filipino'] },
 ];
 
-// ─── LoadingOverlay ──────────────────────────────────────────────────────────
-function LoadingOverlay() {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(6px)',
-        backgroundColor: 'rgba(0,0,0,0.35)',
-        animation: 'fadeIn 0.25s ease',
-      }}
-    >
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes pulse { 0%,100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.18); opacity: 1; } }
-        @keyframes dotBounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-10px); } }
-      `}</style>
-
-      {/* Pulsing brain ring */}
-      <div style={{
-        width: 72, height: 72, borderRadius: '50%',
-        border: '4px solid #F5C518',
-        boxShadow: '0 0 24px #F5C51888',
-        animation: 'pulse 1.4s ease-in-out infinite',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 32, marginBottom: 20,
-      }}>
-        🧠
-      </div>
-
-      {/* Thinking dots */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {[0, 1, 2].map((i) => (
-          <div key={i} style={{
-            width: 10, height: 10, borderRadius: '50%', backgroundColor: '#F5C518',
-            animation: `dotBounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-          }} />
-        ))}
-      </div>
-
-      <p style={{ color: '#fff', fontWeight: 600, fontSize: 15, letterSpacing: 0.5 }}>
-        AI is thinking…
-      </p>
-    </div>
-  );
-}
+// Local LoadingOverlay removed in favor of global loader
 
 // ─── OutputCard ──────────────────────────────────────────────────────────────
 function OutputCard({ result }) {
@@ -349,6 +300,7 @@ export default function TextPage() {
   const [loading, setLoading]     = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [activeTab, setActiveTab] = useState('simplify');
+  const { setGlobalLoading } = useGlobalLoader();
 
   const handleProcess = async () => {
     if (!input.trim()) {
@@ -358,6 +310,7 @@ export default function TextPage() {
 
     try {
       setLoading(true);
+      setGlobalLoading(true);
       setShowResult(false);
 
       let data;
@@ -366,23 +319,22 @@ export default function TextPage() {
         case 'simplify':  data = await simplifyText(input); actionType = 'simplify'; break;
         case 'explain':   data = await explainText(input); actionType = 'explain'; break;
         case 'summarize': data = await summarizeText(input); actionType = 'summarize'; break;
-        case 'alttext':   data = await generateAltText(input); actionType = 'alttext'; break;
         default:          data = await simplifyText(input); actionType = 'simplify';
       }
 
       console.log('API RESPONSE:', data);
 
-      if (!data || !data.reply) {
+      if (!data || !data.result) {
         throw new Error(data?.message || 'Invalid response from server');
       }
 
-      setResult(data.reply);
+      setResult(data.result);
       setShowResult(true);
       
       // Save to history after successful processing
       console.log(`📝 [HISTORY] Saving ${actionType} request to history...`);
       try {
-        await saveHistory(actionType, input, data.reply);
+        await saveHistory(actionType, input, data.result);
         console.log(`✅ [HISTORY] ${actionType} saved successfully`);
       } catch (historyError) {
         console.error(`❌ [HISTORY] Failed to save ${actionType}:`, historyError);
@@ -399,13 +351,13 @@ export default function TextPage() {
       toast.error(errorMsg || 'Processing failed');
     } finally {
       setLoading(false);
+      setGlobalLoading(false);
     }
   };
 
   return (
     <main className="min-h-screen bg-background text-textPrimary px-6 py-10 md:px-10">
-      {/* AI Thinking Loading Overlay */}
-      {loading && <LoadingOverlay />}
+      {/* AI Thinking Loading Overlay is handled globally */}
 
       <div className="mx-auto max-w-4xl">
         <header className="mb-8">
@@ -421,7 +373,6 @@ export default function TextPage() {
               { id: 'simplify',  label: 'Simplify'  },
               { id: 'explain',   label: 'Explain'   },
               { id: 'summarize', label: 'Summarize' },
-              { id: 'alttext',   label: 'Alt Text'  },
             ].map((tab) => (
               <button
                 key={tab.id}

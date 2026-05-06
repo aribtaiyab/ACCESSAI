@@ -9,6 +9,7 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { SettingsProvider } from '@/context/SettingsContext';
+import { GlobalLoaderProvider } from '@/context/GlobalLoaderContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,7 +23,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         <SettingsProvider>
-          {children}
+          <GlobalLoaderProvider>
+            {children}
+          </GlobalLoaderProvider>
         </SettingsProvider>
       </body>
     </html>

@@ -111,8 +111,7 @@ export default function ContrastPage() {
     setLoading(true);
     setResult(null);
 
-    // Artificial delay (300ms) to simulate AI processing as requested
-    setTimeout(() => {
+    try {
       const ratio = calculateContrastRatio(fgColor, bgColor);
       if (ratio) {
         setResult({
@@ -121,14 +120,14 @@ export default function ContrastPage() {
           aaNormal: ratio >= 4.5,
           aaaLarge: ratio >= 4.5,
           aaaNormal: ratio >= 7.0,
-          // Simple suggestion: if contrast is poor, suggest white or black based on bg luminance
           suggestion: ratio < 4.5 
             ? getLuminance(hexToRgb(bgColor)) > 0.5 ? '#000000' : '#FFFFFF' 
             : null
         });
       }
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   return (

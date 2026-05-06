@@ -41,7 +41,13 @@ export default function ProfilePage() {
 
     setIsProfileLoading(true);
     try {
-      await updateProfile(profile);
+      const res = await updateProfile(profile);
+      if (res && res.data) {
+        setProfile({
+          name: res.data.user_metadata?.name || res.data.name || '',
+          email: res.data.email || ''
+        });
+      }
       toast.success('Profile updated successfully');
     } catch (error) {
       console.error(error);

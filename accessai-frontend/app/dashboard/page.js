@@ -7,7 +7,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MessageSquare, Image, Eye, BarChart3, Settings, User, Clock } from 'lucide-react';
+import { MessageSquare, Eye, BarChart3, Settings, User, Clock } from 'lucide-react';
 
 export default function DashboardPage() {
   const tools = [
@@ -17,12 +17,7 @@ export default function DashboardPage() {
       title: 'Text Tools',
       description: 'Simplify, explain, and summarize text with AI.',
     },
-    {
-      href: '/dashboard/image',
-      icon: Image,
-      title: 'Image Tools',
-      description: 'Generate accessible image descriptions.',
-    },
+
     {
       href: '/dashboard/contrast',
       icon: Eye,

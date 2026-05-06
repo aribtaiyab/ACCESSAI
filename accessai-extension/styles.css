@@ -1,0 +1,287 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   styles.css — AccessAI Chrome Extension
+   WHY NEEDED: Scoped styles for the floating button and popup injected into
+   every page. All IDs/classes are namespaced with "accessai-" to avoid
+   clashing with any website's existing CSS.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Floating Trigger Button ─────────────────────────────────────────────── */
+#accessai-btn {
+  position: absolute;
+  z-index: 2147483646;
+  background: #F5C518;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  user-select: none;
+  white-space: nowrap;
+  animation: accessai-fadein 0.15s ease;
+  transition: transform 0.1s ease, background 0.15s ease;
+  border: 2px solid rgba(0,0,0,0.08);
+}
+
+#accessai-btn:hover {
+  background: #e8b800;
+  transform: scale(1.04);
+}
+
+/* ── Main Popup ──────────────────────────────────────────────────────────── */
+#accessai-popup {
+  position: absolute;
+  z-index: 2147483647;
+  width: 340px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0,0,0,0.08);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  animation: accessai-fadein 0.15s ease;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* ── Header (tabs + close) ───────────────────────────────────────────────── */
+.accessai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 10px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.accessai-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.accessai-tab {
+  all: unset;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #666;
+  padding: 5px 11px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.accessai-tab:hover {
+  background: #f0f0f0;
+  color: #111;
+}
+
+.accessai-tab.active {
+  background: #F5C518;
+  color: #111;
+}
+
+#accessai-close {
+  all: unset;
+  font-size: 14px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 50%;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+
+#accessai-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* ── Body (loader + result) ──────────────────────────────────────────────── */
+.accessai-body {
+  padding: 16px 18px;
+  min-height: 72px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar */
+.accessai-body::-webkit-scrollbar {
+  width: 4px;
+}
+.accessai-body::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+
+/* ── Loader ──────────────────────────────────────────────────────────────── */
+.accessai-loader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #555;
+  font-size: 14px;
+}
+
+.accessai-loader-text {
+  font-weight: 500;
+}
+
+.accessai-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #f0f0f0;
+  border-top-color: #F5C518;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: accessai-spin 0.7s linear infinite;
+}
+
+/* ── Result ──────────────────────────────────────────────────────────────── */
+.accessai-result {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #1a1a1a;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Footer (Speak + Translate) ──────────────────────────────────────────── */
+.accessai-footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.accessai-footer button {
+  all: unset;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1.5px solid #e8e8e8;
+  background: #fff;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.accessai-footer button:hover {
+  background: #F5C518;
+  color: #111;
+  border-color: #F5C518;
+}
+
+/* ── Translate Language Dropdown ─────────────────────────────────────────── */
+.accessai-translate-wrap {
+  position: relative;
+}
+
+.accessai-lang-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  width: 210px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+  z-index: 9999;
+  overflow: hidden;
+  animation: accessai-fadein 0.12s ease;
+}
+
+.accessai-lang-search-wrap {
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.accessai-lang-search {
+  all: unset;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.accessai-lang-search:focus {
+  border-color: #F5C518;
+}
+
+.accessai-lang-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.accessai-lang-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.accessai-lang-list::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+
+.accessai-lang-group-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 7px 12px 3px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}
+
+.accessai-lang-item {
+  all: unset;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #222;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.accessai-lang-item:hover {
+  background: #fff9e6;
+  color: #111;
+}
+
+.accessai-lang-active {
+  background: #FFF3CC;
+  color: #111;
+  font-weight: 700;
+}
+
+.accessai-lang-none {
+  font-size: 13px;
+  color: #aaa;
+  text-align: center;
+  padding: 14px;
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes accessai-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes accessai-spin {
+  to { transform: rotate(360deg); }
+}
