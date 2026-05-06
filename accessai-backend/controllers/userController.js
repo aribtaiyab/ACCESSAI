@@ -25,7 +25,7 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { email } = req.body;
+    const { email, name } = req.body;
 
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -33,6 +33,13 @@ exports.updateProfile = async (req, res) => {
 
     const updatePayload = {};
     if (email) updatePayload.email = email;
+    if (name) {
+      updatePayload.user_metadata = { ...(req.user.user_metadata || {}), name };
+    }
+
+    if (!supabase.auth.admin) {
+      return res.status(500).json({ success: false, error: 'Profile updates are currently disabled (Admin client not initialized)' });
+    }
 
     const { data, error } = await supabase.auth.admin.updateUserById(userId, updatePayload);
 
@@ -41,6 +48,7 @@ exports.updateProfile = async (req, res) => {
     }
 
     return res.json({ success: true, data: data.user });
+
   } catch (error) {
     console.error('Update profile error:', error);
     return res.status(500).json({ success: false, error: 'Failed to update profile' });
@@ -50,13 +58,28 @@ exports.updateProfile = async (req, res) => {
 exports.updatePassword = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { password } = req.body;
+    const userEmail = req.user?.email;
+    const { currentPassword, newPassword } = req.body;
 
-    if (!userId || !password) {
-      return res.status(400).json({ success: false, error: 'Password is required' });
+    if (!userId || !currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Current and new password are required' });
     }
 
-    const { error } = await supabase.auth.admin.updateUserById(userId, { password });
+    // Verify current password first by attempting a login
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: userEmail,
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      return res.status(401).json({ success: false, error: 'Incorrect current password' });
+    }
+
+    if (!supabase.auth.admin) {
+      return res.status(500).json({ success: false, error: 'Password updates are currently disabled (Admin client not initialized)' });
+    }
+
+    const { error } = await supabase.auth.admin.updateUserById(userId, { password: newPassword });
 
     if (error) {
       return res.status(400).json({ success: false, error: error.message });
@@ -83,6 +106,10 @@ exports.deleteAccount = async (req, res) => {
     await supabase.from('org_audits').delete().eq('user_id', userId);
 
     // Then delete user
+    if (!supabase.auth.admin) {
+      return res.status(500).json({ success: false, error: 'Account deletion is currently disabled (Admin client not initialized)' });
+    }
+
     const { error } = await supabase.auth.admin.deleteUser(userId);
 
     if (error) {

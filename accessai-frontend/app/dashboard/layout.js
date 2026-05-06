@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase';
 import Link from 'next/link';
-import { LogOut, Settings, BarChart3, MessageSquare, Image, Eye } from 'lucide-react';
+import { LogOut, Settings, BarChart3, MessageSquare, Image, Eye, Clock } from 'lucide-react';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -61,6 +61,7 @@ export default function DashboardLayout({ children }) {
     { href: '/dashboard/image', icon: Image, label: 'Image Tools', name: 'image' },
     { href: '/dashboard/contrast', icon: Eye, label: 'Contrast', name: 'contrast' },
     { href: '/dashboard/org', icon: BarChart3, label: 'Org Audit', name: 'org' },
+    { href: '/dashboard/history', icon: Clock, label: 'History', name: 'history' },
     { href: '/dashboard/profile', icon: Settings, label: 'Profile', name: 'profile' },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings', name: 'settings' },
   ];
@@ -81,7 +82,7 @@ export default function DashboardLayout({ children }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-100 text-textSecondary hover:text-textPrimary transition"
+                className="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 text-textSecondary dark:text-gray-300 hover:text-textPrimary dark:hover:text-white transition"
               >
                 <Icon size={20} />
                 <span>{link.label}</span>

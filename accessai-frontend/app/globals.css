@@ -2,7 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #F5C518;
+  --color-hover: #E0B800;
+  --color-background: #F7F6F2;
+  --color-surface: #FFFFFF;
+  --color-border: #E5E5E5;
+  --color-text-primary: #111111;
+  --color-text-secondary: #6B6B6B;
+  --color-success: #1D9E75;
+  --color-error: #E24B4A;
+}
+
+.dark {
+  --color-primary: #F5C518;
+  --color-hover: #E0B800;
+  --color-background: #121212;
+  --color-surface: #1E1E1E;
+  --color-border: #333333;
+  --color-text-primary: #F5F5F5;
+  --color-text-secondary: #A0A0A0;
+  --color-success: #20B282;
+  --color-error: #F25C54;
+}
+
 body {
-  background-color: #F7F6F2;
-  color: #111111;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Overrides for hardcoded utility classes in dark mode to preserve UI aesthetic */
+.dark .bg-white { background-color: var(--color-surface) !important; }
+.dark .bg-gray-50 { background-color: #181818 !important; }
+.dark .bg-gray-100 { background-color: #222222 !important; }
+.dark .bg-gray-200 { background-color: #333333 !important; }
+.dark .border-gray-200, .dark .border-gray-300 { border-color: var(--color-border) !important; }
+.dark input, .dark textarea, .dark select { 
+  background-color: var(--color-surface); 
+  color: var(--color-text-primary); 
+  border-color: var(--color-border); 
 }

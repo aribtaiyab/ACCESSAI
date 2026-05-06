@@ -7,7 +7,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MessageSquare, Image, Eye, BarChart3, Settings, User } from 'lucide-react';
+import { MessageSquare, Image, Eye, BarChart3, Settings, User, Clock } from 'lucide-react';
 
 export default function DashboardPage() {
   const tools = [
@@ -40,6 +40,12 @@ export default function DashboardPage() {
       icon: Settings,
       title: 'Settings',
       description: 'Manage your accessibility preferences.',
+    },
+    {
+      href: '/dashboard/history',
+      icon: Clock,
+      title: 'History',
+      description: 'View your past AI requests and audits.',
     },
     {
       href: '/dashboard/profile',

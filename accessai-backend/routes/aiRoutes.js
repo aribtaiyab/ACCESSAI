@@ -10,5 +10,6 @@ const aiController = require('../controllers/aiController');
 
 router.post('/chat', aiController.chat);
 router.post('/translate', aiController.translate);
+router.post('/alt-text', aiController.altText);
 
 module.exports = router;

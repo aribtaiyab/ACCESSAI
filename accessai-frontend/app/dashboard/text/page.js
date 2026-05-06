@@ -10,7 +10,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { simplifyText, explainText, summarizeText, generateAltText, translateText } from '@/lib/api';
+import { simplifyText, explainText, summarizeText, generateAltText, translateText, saveHistory } from '@/lib/api';
+import { useSettings } from '@/context/SettingsContext';
 
 // ─── Language map for Web Speech API ────────────────────────────────────────
 const LANG_CODE_MAP = {
@@ -141,6 +142,7 @@ function OutputCard({ result }) {
   const [speaking, setSpeaking]                 = useState(false);
   const [activeLang, setActiveLang]             = useState(null);
   const [langSearch, setLangSearch]             = useState('');
+  const { settings }                            = useSettings();
 
   const visibleText = viewMode === 'translated' && translatedText ? translatedText : result;
 
@@ -186,6 +188,7 @@ function OutputCard({ result }) {
 
     const utterance = new SpeechSynthesisUtterance(visibleText);
     utterance.lang = langCode;
+    utterance.rate = settings?.speech_rate || 1.0;
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => setSpeaking(false);
     setSpeaking(true);
@@ -358,12 +361,13 @@ export default function TextPage() {
       setShowResult(false);
 
       let data;
+      let actionType;
       switch (activeTab) {
-        case 'simplify':  data = await simplifyText(input);    break;
-        case 'explain':   data = await explainText(input);     break;
-        case 'summarize': data = await summarizeText(input);   break;
-        case 'alttext':   data = await generateAltText(input); break;
-        default:          data = await simplifyText(input);
+        case 'simplify':  data = await simplifyText(input); actionType = 'simplify'; break;
+        case 'explain':   data = await explainText(input); actionType = 'explain'; break;
+        case 'summarize': data = await summarizeText(input); actionType = 'summarize'; break;
+        case 'alttext':   data = await generateAltText(input); actionType = 'alttext'; break;
+        default:          data = await simplifyText(input); actionType = 'simplify';
       }
 
       console.log('API RESPONSE:', data);
@@ -374,6 +378,17 @@ export default function TextPage() {
 
       setResult(data.reply);
       setShowResult(true);
+      
+      // Save to history after successful processing
+      console.log(`📝 [HISTORY] Saving ${actionType} request to history...`);
+      try {
+        await saveHistory(actionType, input, data.reply);
+        console.log(`✅ [HISTORY] ${actionType} saved successfully`);
+      } catch (historyError) {
+        console.error(`❌ [HISTORY] Failed to save ${actionType}:`, historyError);
+        // Don't show error to user for history save - it's non-critical
+      }
+      
       toast.success('Processing complete!');
     } catch (error) {
       console.error('API ERROR:', error);

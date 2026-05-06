@@ -11,14 +11,20 @@ exports.getHistory = async (req, res) => {
   try {
     const userId = req.user?.id;
 
+    console.log(`📚 [HISTORY] Fetch request received`);
+    console.log(`📚 [HISTORY] User ID: ${userId}`);
+
     if (!userId) {
+      console.error(`❌ [HISTORY] No user ID provided`);
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
     if (!supabase) {
+      console.error(`❌ [HISTORY] Supabase not available`);
       return res.status(500).json({ success: false, error: 'Database not available' });
     }
 
+    console.log(`🔍 [HISTORY] Querying database for user history...`);
     const { data, error } = await supabase
       .from('history')
       .select('*')
@@ -26,12 +32,14 @@ exports.getHistory = async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error(`❌ [HISTORY] Supabase query error:`, error);
       return res.status(500).json({ success: false, error: error.message });
     }
 
+    console.log(`✅ [HISTORY] Successfully fetched ${data?.length || 0} history items`);
     return res.json({ success: true, data });
   } catch (error) {
-    console.error('Get history error:', error);
+    console.error('❌ [HISTORY] Get history error:', error);
     return res.status(500).json({ success: false, error: 'Failed to get history' });
   }
 };
@@ -41,25 +49,36 @@ exports.saveHistory = async (req, res) => {
     const userId = req.user?.id;
     const { type, input_text, output_text } = req.body;
 
+    console.log(`📝 [HISTORY] Save request received`);
+    console.log(`📝 [HISTORY] User ID: ${userId}`);
+    console.log(`📝 [HISTORY] Type: ${type}`);
+    console.log(`📝 [HISTORY] Input length: ${input_text?.length}`);
+    console.log(`📝 [HISTORY] Output length: ${output_text?.length}`);
+
     if (!userId || !type || !input_text || !output_text) {
+      console.error(`❌ [HISTORY] Missing required fields`);
       return res.status(400).json({ success: false, error: 'User ID, type, input text, and output text are required' });
     }
 
     if (!supabase) {
+      console.error(`❌ [HISTORY] Supabase not available`);
       return res.status(500).json({ success: false, error: 'Database not available' });
     }
 
+    console.log(`💾 [HISTORY] Inserting into database...`);
     const { data, error } = await supabase
       .from('history')
       .insert([{ user_id: userId, type, input_text, output_text }]);
 
     if (error) {
+      console.error(`❌ [HISTORY] Supabase insert error:`, error);
       return res.status(500).json({ success: false, error: error.message });
     }
 
+    console.log(`✅ [HISTORY] Successfully saved`, { data });
     return res.json({ success: true, data });
   } catch (error) {
-    console.error('Save history error:', error);
+    console.error('❌ [HISTORY] Save history error:', error);
     return res.status(500).json({ success: false, error: 'Failed to save history' });
   }
 };

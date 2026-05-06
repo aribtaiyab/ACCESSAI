@@ -19,12 +19,24 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email and password are required' });
     }
 
-    // Use admin API to auto-confirm email
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirm email so user doesn't need to verify
-    });
+    let data, error;
+    if (supabase.auth.admin) {
+      const res = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+      data = res.data;
+      error = res.error;
+    } else {
+      console.warn('Admin client not available, using standard signUp (email confirmation may be required)');
+      const res = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      data = res.data;
+      error = res.error;
+    }
 
     if (error) {
       return res.status(400).json({ success: false, error: error.message });

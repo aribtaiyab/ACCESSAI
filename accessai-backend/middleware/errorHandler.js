@@ -15,6 +15,14 @@ const errorHandler = (err, req, res, next) => {
     timestamp: new Date().toISOString(),
   });
 
+  if (err.type === 'entity.too.large' || err.status === 413) {
+    return res.status(413).json({
+      success: false,
+      reply: 'Image too large. Please upload smaller image.',
+      error: 'Image too large. Please upload smaller image.',
+    });
+  }
+
   const status = err.status || 500;
   const message = err.message || 'Internal Server Error';
 

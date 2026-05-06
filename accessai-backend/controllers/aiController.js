@@ -141,6 +141,7 @@ FOLLOW ONLY THE SELECTED MODE.`;
 exports.translate = async (req, res) => {
   try {
     const { text, targetLanguage } = req.body;
+    const userId = req.user?.id;
 
     if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ success: false, data: 'Error: Text is required.' });
@@ -182,9 +183,101 @@ exports.translate = async (req, res) => {
 
     const translatedText = response.data?.choices?.[0]?.message?.content?.trim() || 'Translation unavailable.';
 
+    if (userId) {
+      await saveHistory(userId, 'translate', text, translatedText);
+    }
+
     return res.json({ success: true, data: translatedText });
   } catch (error) {
     console.error('TRANSLATE ERROR:', error.response?.data || error.message);
     return res.status(500).json({ success: false, data: 'Unable to process request. Please try again.' });
   }
 };
+
+exports.altText = async (req, res) => {
+  try {
+    const { image } = req.body;
+    const userId = req.user?.id;
+
+    if (!image) {
+      return res.status(400).json({ reply: 'Error: Image is required.' });
+    }
+
+    if (!process.env.HF_API_KEY || !process.env.GROQ_API_KEY) {
+      return res.status(500).json({ reply: 'Error: Server API keys not configured.' });
+    }
+
+    let hfData;
+    if (image.startsWith('http')) {
+      const imgRes = await axios.get(image, { responseType: 'arraybuffer' });
+      hfData = imgRes.data;
+    } else if (image.startsWith('data:image')) {
+      const base64Data = image.split(',')[1];
+      hfData = Buffer.from(base64Data, 'base64');
+    } else {
+      return res.status(400).json({ reply: 'Error: Invalid image format.' });
+    }
+
+    // Step 1: Hugging Face Caption
+    let caption = '';
+    try {
+      const hfResponse = await axios.post(
+        'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base',
+        hfData,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.HF_API_KEY}`,
+            'Content-Type': 'application/octet-stream',
+          },
+        }
+      );
+      caption = hfResponse.data?.[0]?.generated_text;
+    } catch (err) {
+      console.error('HF Error:', err.response?.data || err.message);
+      return res.json({ reply: 'Image description not available' });
+    }
+
+    if (!caption) {
+      return res.json({ reply: 'Image description not available' });
+    }
+
+    // Step 2: Groq Refinement
+    let altText = caption;
+    try {
+      const groqResponse = await axios.post(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          model: 'mixtral-8x7b-32768',
+          messages: [
+            { role: 'user', content: `Convert this image caption into a clear, concise alt text under 120 characters. Make it accessible and descriptive: ${caption}` }
+          ]
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 15000
+        }
+      );
+      const groqText = groqResponse.data?.choices?.[0]?.message?.content?.trim();
+      if (groqText) {
+        altText = groqText;
+      }
+    } catch (err) {
+      console.error('Groq Error in alt-text:', err.message);
+      altText = caption.length > 120 ? caption.substring(0, 117) + '...' : caption;
+    }
+
+    // Save to history
+    if (userId) {
+      await saveHistory(userId, 'alt-text', image.startsWith('http') ? image : 'uploaded image', altText);
+    }
+
+    return res.json({ reply: altText });
+  } catch (error) {
+    console.error('ALT TEXT ERROR:', error.message);
+    return res.status(500).json({ reply: 'Unable to process request. Please try again.' });
+  }
+};
+

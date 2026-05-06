@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
@@ -7,15 +8,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#F5C518',
-        hover: '#E0B800',
-        background: '#F7F6F2',
-        surface: '#FFFFFF',
-        border: '#E5E5E5',
-        textPrimary: '#111111',
-        textSecondary: '#6B6B6B',
-        success: '#1D9E75',
-        error: '#E24B4A',
+        primary: 'var(--color-primary)',
+        hover: 'var(--color-hover)',
+        background: 'var(--color-background)',
+        surface: 'var(--color-surface)',
+        border: 'var(--color-border)',
+        textPrimary: 'var(--color-text-primary)',
+        textSecondary: 'var(--color-text-secondary)',
+        success: 'var(--color-success)',
+        error: 'var(--color-error)',
       },
       borderRadius: {
         xl: '12px',

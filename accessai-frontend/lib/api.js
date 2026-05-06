@@ -68,6 +68,23 @@ export const explainText = (text) => processTextWithAI(text, 'explain');
 export const summarizeText = (text) => processTextWithAI(text, 'summarize');
 export const generateAltText = (text) => processTextWithAI(text, 'alttext');
 
+export const generateImageAltText = async (image) => {
+  try {
+    const response = await api.post('/api/alt-text', { image });
+    const data = response.data;
+    if (!response.status.toString().startsWith('2')) {
+      throw new Error(data.reply || data.message || 'API error');
+    }
+    console.log("IMAGE ALT TEXT RESPONSE:", data);
+    return data;
+  } catch (error) {
+    if (error.response?.data?.reply) {
+      throw new Error(error.response.data.reply);
+    }
+    throw error;
+  }
+};
+
 export const translateText = async (text, targetLanguage) => {
   try {
     const response = await api.post('/api/translate', { text, targetLanguage });
@@ -124,13 +141,13 @@ export const getProfile = async () => {
   return response.data;
 };
 
-export const updateProfile = async (email) => {
-  const response = await api.put('/api/user/profile', { email });
+export const updateProfile = async (data) => {
+  const response = await api.put('/api/user/profile', data);
   return response.data;
 };
 
-export const updatePassword = async (password) => {
-  const response = await api.put('/api/user/password', { password });
+export const updatePassword = async (currentPassword, newPassword) => {
+  const response = await api.put('/api/user/password', { currentPassword, newPassword });
   return response.data;
 };
 
