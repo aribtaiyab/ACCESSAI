@@ -22,10 +22,28 @@ export default function LoginPage() {
   const { login } = useAuth();
 
   const onSubmit = async (data) => {
+    const email = data.email?.trim();
+    const password = data.password;
+
+    if (!email) {
+      toast.error('Email is required.');
+      return;
+    }
+    if (!password) {
+      toast.error('Password is required.');
+      return;
+    }
+
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!EMAIL_REGEX.test(email)) {
+      toast.error('Please provide a valid email address.');
+      return;
+    }
+
     setLoading(true);
     setGlobalLoading(true);
     try {
-      await login(data.email, data.password);
+      await login(email, password);
       toast.success('Login successful!');
       router.push('/text-tools');
     } catch (err) {

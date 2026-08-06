@@ -9,18 +9,35 @@
 const userService = require('../services/userService');
 const { generateToken } = require('../services/jwtService');
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 exports.signup = async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name } = req.body || {};
 
-    if (!email || !password) {
+    if (!email || typeof email !== 'string' || !email.trim() || !password || typeof password !== 'string') {
       return res.status(400).json({ 
         success: false, 
         error: 'Email and password are required.' 
       });
     }
 
-    const user = await userService.createUser({ email, password, name });
+    const trimmedEmail = email.trim();
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide a valid email address.'
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password must be at least 6 characters long.'
+      });
+    }
+
+    const user = await userService.createUser({ email: trimmedEmail, password, name });
     const token = generateToken(user);
 
     return res.status(201).json({
@@ -34,7 +51,8 @@ exports.signup = async (req, res) => {
     });
   } catch (error) {
     console.error('Signup error:', error.message);
-    return res.status(400).json({ 
+    const statusCode = error.statusCode || 400;
+    return res.status(statusCode).json({ 
       success: false, 
       error: error.message || 'Signup failed.' 
     });
@@ -43,23 +61,24 @@ exports.signup = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
-    if (!email || !password) {
+    if (!email || typeof email !== 'string' || !email.trim() || !password || typeof password !== 'string') {
       return res.status(400).json({ 
         success: false, 
         error: 'Email and password are required.' 
       });
     }
 
-    const user = await userService.validateUser({ email, password });
-    if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Invalid email or password.' 
+    const trimmedEmail = email.trim();
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide a valid email address.'
       });
     }
 
+    const user = await userService.validateUser({ email: trimmedEmail, password });
     const token = generateToken(user);
 
     return res.status(200).json({
@@ -73,9 +92,10 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error.message);
-    return res.status(500).json({ 
+    const statusCode = error.statusCode || (error.message.includes('password') ? 401 : error.message.includes('No account') ? 404 : 500);
+    return res.status(statusCode).json({ 
       success: false, 
-      error: 'Login failed. Please try again.' 
+      error: error.message || 'Login failed. Please try again.' 
     });
   }
 };
@@ -108,9 +128,9 @@ exports.getSession = exports.getMe;
 
 exports.forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email } = req.body || {};
 
-    if (!email) {
+    if (!email || typeof email !== 'string' || !email.trim()) {
       return res.status(400).json({ 
         success: false, 
         error: 'Email is required.' 
@@ -122,11 +142,12 @@ exports.forgotPassword = async (req, res) => {
     return res.status(200).json({ 
       success: true, 
       message: 'Password reset link generated.',
-      resetToken: token // Useful for local testing/dev
+      resetToken: token
     });
   } catch (error) {
     console.error('Forgot password error:', error.message);
-    return res.status(400).json({ 
+    const statusCode = error.statusCode || 400;
+    return res.status(statusCode).json({ 
       success: false, 
       error: error.message || 'Forgot password request failed.' 
     });
@@ -135,7 +156,7 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   try {
-    const { token, password } = req.body;
+    const { token, password } = req.body || {};
 
     if (!token || !password) {
       return res.status(400).json({ 
@@ -152,7 +173,8 @@ exports.resetPassword = async (req, res) => {
     });
   } catch (error) {
     console.error('Reset password error:', error.message);
-    return res.status(400).json({ 
+    const statusCode = error.statusCode || 400;
+    return res.status(statusCode).json({ 
       success: false, 
       error: error.message || 'Password reset failed.' 
     });

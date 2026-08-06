@@ -22,7 +22,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   (async () => {
     try {
-      const API_HOST = 'http://127.0.0.1:5000';
+      const API_HOST = 'https://accessai-backend-lx57.onrender.com';
       const API_BASE = `${API_HOST}/api`;
 
       // ── Standard text-tool routes (UNCHANGED) ───────────────────────────
@@ -120,7 +120,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.error('[AccessAI] Request failed:', err);
       let errorMessage = 'Connection failed';
       if (err.name === 'AbortError') errorMessage = 'Request timeout (30s)';
-      else if (err.message?.includes('Failed to fetch')) errorMessage = 'Cannot reach backend (Check port 5000)';
+      else if (err.message?.includes('Failed to fetch')) errorMessage = 'Cannot reach backend. Please check the deployed service URL.';
       sendResponse({ error: errorMessage });
     }
   })();

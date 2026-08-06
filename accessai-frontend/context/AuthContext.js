@@ -83,7 +83,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const response = await axios.post(`${API_BASE}/api/auth/login`, {
-        email,
+        email: typeof email === 'string' ? email.trim() : email,
         password,
       });
 
@@ -93,11 +93,17 @@ export function AuthProvider({ children }) {
         setToken(authToken);
         localStorage.setItem('accessai_token', authToken);
         localStorage.setItem('accessai_user', JSON.stringify(authUser));
-        return { success: true, user: authUser };
+        return { success: true, user: authUser, message: response.data.message };
       } else {
         throw new Error(response.data?.error || 'Login failed.');
       }
     } catch (err) {
+      if (err.code === 'ERR_NETWORK' || (!err.response && err.request)) {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      if (err.response?.status === 500) {
+        throw new Error(err.response?.data?.error || 'Server error. Please try again later.');
+      }
       const message = err.response?.data?.error || err.message || 'Login failed. Please check your credentials.';
       throw new Error(message);
     }
@@ -106,9 +112,9 @@ export function AuthProvider({ children }) {
   const signup = async (email, password, name = '') => {
     try {
       const response = await axios.post(`${API_BASE}/api/auth/signup`, {
-        email,
+        email: typeof email === 'string' ? email.trim() : email,
         password,
-        name,
+        name: typeof name === 'string' ? name.trim() : name,
       });
 
       if (response.data?.success && response.data?.data) {
@@ -117,11 +123,17 @@ export function AuthProvider({ children }) {
         setToken(authToken);
         localStorage.setItem('accessai_token', authToken);
         localStorage.setItem('accessai_user', JSON.stringify(authUser));
-        return { success: true, user: authUser };
+        return { success: true, user: authUser, message: response.data.message };
       } else {
         throw new Error(response.data?.error || 'Signup failed.');
       }
     } catch (err) {
+      if (err.code === 'ERR_NETWORK' || (!err.response && err.request)) {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      if (err.response?.status === 500) {
+        throw new Error(err.response?.data?.error || 'Server error. Please try again later.');
+      }
       const message = err.response?.data?.error || err.message || 'Signup failed. Please try again.';
       throw new Error(message);
     }

@@ -34,13 +34,43 @@ const errorHandler = require('./middleware/errorHandler');
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - Allow all origins for extension and local dev
-app.use(cors({
-  origin: true, // Dynamically set Access-Control-Allow-Origin to the requester's origin
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  'https://accessai-frontend.vercel.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000',
+  ...configuredOrigins,
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const isChromeExtensionOrigin = origin.startsWith('chrome-extension://') || origin.startsWith('moz-extension://');
+    const isVercelOrigin = typeof origin === 'string' && (origin === 'https://accessai-frontend.vercel.app' || origin.endsWith('.vercel.app'));
+    const isAllowedOrigin = allowedOrigins.includes(origin) || isChromeExtensionOrigin || isVercelOrigin;
+
+    if (isAllowedOrigin) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Body parser
 app.use(express.json({ limit: '5mb' }));
@@ -98,10 +128,10 @@ const startPort = process.env.PORT ? Number(process.env.PORT) : 5000;
 const startServer = () => {
   const server = app.listen(startPort, () => {
     console.log('\n' + '='.repeat(50));
-    console.log(`✓ Server running on http://localhost:${startPort}`);
+    console.log(`✓ Server listening on port ${startPort}`);
     console.log('✓ Database: SQLite (local persistent)');
     console.log('✓ Auth: JWT (stateless tokens)');
-    console.log('✓ Frontend: http://localhost:3000');
+    console.log('✓ Frontend: configured via environment variables');
     console.log('='.repeat(50) + '\n');
   });
 

@@ -20,10 +20,33 @@ export default function SignupPage() {
   const { signup } = useAuth();
 
   const onSubmit = async (data) => {
+    const email = data.email?.trim();
+    const password = data.password;
+
+    if (!email) {
+      toast.error('Email is required.');
+      return;
+    }
+    if (!password) {
+      toast.error('Password is required.');
+      return;
+    }
+
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!EMAIL_REGEX.test(email)) {
+      toast.error('Please provide a valid email address.');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters long.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await signup(data.email, data.password);
-      toast.success('Signup successful!');
+      const res = await signup(email, password);
+      toast.success(res?.message || 'Account created successfully.');
       router.push('/text-tools');
     } catch (err) {
       const errorMessage = err.message || 'Signup failed. Please try again.';

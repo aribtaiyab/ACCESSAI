@@ -13,20 +13,33 @@ const db = require('../config/database');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const createUser = async ({ email, password, name = '' }) => {
-  if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
-    throw new Error('Please provide a valid email address.');
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    const error = new Error('Email and password are required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const trimmedEmail = email.trim();
+  if (!EMAIL_REGEX.test(trimmedEmail)) {
+    const error = new Error('Please provide a valid email address.');
+    error.statusCode = 400;
+    throw error;
   }
 
   if (!password || typeof password !== 'string' || password.length < 6) {
-    throw new Error('Password must be at least 6 characters long.');
+    const error = new Error('Password must be at least 6 characters long.');
+    error.statusCode = 400;
+    throw error;
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = trimmedEmail.toLowerCase();
 
   // Check duplicate email
   const existing = await db.get('SELECT id FROM users WHERE email = ?', [normalizedEmail]);
   if (existing) {
-    throw new Error('An account with this email already exists. Please sign in.');
+    const error = new Error('An account with this email already exists. Please sign in.');
+    error.statusCode = 409;
+    throw error;
   }
 
   // Hash password using bcrypt
@@ -34,7 +47,7 @@ const createUser = async ({ email, password, name = '' }) => {
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   const userId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
-  const sanitizedName = name ? name.trim() : normalizedEmail.split('@')[0];
+  const sanitizedName = name && typeof name === 'string' && name.trim() ? name.trim() : normalizedEmail.split('@')[0];
 
   await db.run(
     `INSERT INTO users (id, email, password, name, created_at, updated_at) 
@@ -51,20 +64,33 @@ const createUser = async ({ email, password, name = '' }) => {
 };
 
 const validateUser = async ({ email, password }) => {
-  if (!email || !password) {
-    return null;
+  if (!email || typeof email !== 'string' || !email.trim() || !password || typeof password !== 'string') {
+    const error = new Error('Email and password are required.');
+    error.statusCode = 400;
+    throw error;
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
+  const trimmedEmail = email.trim();
+  if (!EMAIL_REGEX.test(trimmedEmail)) {
+    const error = new Error('Please provide a valid email address.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedEmail = trimmedEmail.toLowerCase();
   const user = await db.get('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
   
   if (!user) {
-    return null;
+    const error = new Error('No account found. Please sign up first.');
+    error.statusCode = 404;
+    throw error;
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    return null;
+    const error = new Error('Incorrect password. Please try again.');
+    error.statusCode = 401;
+    throw error;
   }
 
   return {
@@ -82,19 +108,25 @@ const getUserById = async (id) => {
 };
 
 const getUserByEmail = async (email) => {
-  if (!email) return null;
+  if (!email || typeof email !== 'string') return null;
   const normalizedEmail = email.trim().toLowerCase();
   const user = await db.get('SELECT id, email, name, created_at FROM users WHERE email = ?', [normalizedEmail]);
   return user || null;
 };
 
 const createPasswordResetToken = async (email) => {
-  if (!email) throw new Error('Email is required.');
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    const error = new Error('Email is required.');
+    error.statusCode = 400;
+    throw error;
+  }
   const normalizedEmail = email.trim().toLowerCase();
   const user = await getUserByEmail(normalizedEmail);
   
   if (!user) {
-    throw new Error('No user found with this email address.');
+    const error = new Error('No account found with this email address.');
+    error.statusCode = 404;
+    throw error;
   }
 
   const resetToken = crypto.randomBytes(32).toString('hex');
@@ -109,9 +141,15 @@ const createPasswordResetToken = async (email) => {
 };
 
 const resetPasswordWithToken = async (token, newPassword) => {
-  if (!token) throw new Error('Reset token is required.');
-  if (!newPassword || newPassword.length < 6) {
-    throw new Error('New password must be at least 6 characters long.');
+  if (!token) {
+    const error = new Error('Reset token is required.');
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+    const error = new Error('New password must be at least 6 characters long.');
+    error.statusCode = 400;
+    throw error;
   }
 
   const user = await db.get(
@@ -120,7 +158,9 @@ const resetPasswordWithToken = async (token, newPassword) => {
   );
 
   if (!user) {
-    throw new Error('Invalid or expired reset token.');
+    const error = new Error('Invalid or expired reset token.');
+    error.statusCode = 400;
+    throw error;
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
