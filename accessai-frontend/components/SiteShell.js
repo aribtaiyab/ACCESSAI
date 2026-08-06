@@ -29,7 +29,7 @@ export default function SiteShell({ children }) {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3 text-[1.05rem] font-semibold tracking-tight text-textPrimary">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-white p-1 shadow-sm">
-              <img src="/logo.svg" alt="AccessAI logo" className="h-full w-full" />
+              <img src="/logo.png" alt="AccessAI logo" className="h-full w-full object-contain" />
             </span>
             <span>AccessAI</span>
           </Link>

@@ -99,7 +99,9 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  background: linear-gradient(135deg, var(--g) 0%, var(--g2) 100%);
+  background-image: url('icons/icon48.png');
+  background-size: cover;
+  background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,16 +117,6 @@ body {
   box-shadow:
     0 4px 20px rgba(245,197,24,.65),
     0 0 0 1px rgba(245,197,24,.5);
-}
-
-/* CSS-only bolt */
-.aai-logo-icon::before {
-  content: '';
-  position: absolute;
-  width: 10px;
-  height: 16px;
-  background: #0E0E12;
-  clip-path: polygon(62% 0%, 30% 46%, 62% 42%, 28% 100%, 58% 56%, 22% 60%);
 }
 
 .aai-brand-name {

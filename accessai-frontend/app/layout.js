@@ -19,7 +19,7 @@ export const metadata = {
   title: 'AccessAI – AI Accessibility Companion',
   description: 'AI-powered accessibility tools for everyone.',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.png',
   },
 };
 
