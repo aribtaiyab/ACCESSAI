@@ -1,74 +1,85 @@
-# AccessAI Chrome Extension
+# AccessAI Chrome Extension (Production Edition)
 
-A minimal, beautiful Chrome Extension that lets users select any text on any website
-and instantly get AI-powered Simplify, Explain, or Summarize results — powered by
-your local AccessAI backend.
+A high-performance, accessible Chrome Extension that enables users to select text on any website and instantly access AI-powered simplification, explanation, summarization, 90+ language translation, and a voice-enabled page assistant ("Ask This Page").
+
+Connected directly to the production AccessAI backend deployed on Render (`https://accessai-backend-lx57.onrender.com`) and frontend on Vercel (`https://accessai-frontend.vercel.app`).
 
 ---
 
-## 📁 File Structure
+## 📁 Project Structure
 
 ```
 accessai-extension/
-├── manifest.json     → Extension config (MV3)
-├── background.js     → Service worker — calls AccessAI backend APIs
-├── content.js        → Injected into all pages — floating button + popup UI
-├── styles.css        → Scoped styles for floating button & popup
+├── manifest.json     → Manifest V3 production configuration
+├── config.js         → Centralized API endpoints, timeouts, and storage keys
+├── background.js     → Event-driven MV3 service worker (API gateway, auth, storage)
+├── content.js        → Isolated content script (selection detection, floating trigger, popup)
+├── styles.css        → Self-contained scoped styles with dark-warm theme & animations
+├── popup.html        → Extension toolbar action UI
+├── popup.css         → Toolbar action popup stylesheet
+├── popup.js          → Toolbar action popup logic
 ├── icons/
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
+│   ├── icon16.png    → 16x16 icon for favicon & toolbar
+│   ├── icon48.png    → 48x48 icon for extensions management
+│   └── icon128.png   → 128x128 high-res icon for Chrome Web Store
+└── README.md         → Extension documentation & Chrome Web Store submission guide
 ```
 
 ---
 
-## 🚀 How to Load the Extension in Chrome
+## 🚀 How to Test Locally in Chrome
 
-1. Open Chrome and go to: `chrome://extensions`
-2. Enable **Developer Mode** (top-right toggle)
-3. Click **"Load unpacked"**
-4. Select the `accessai-extension/` folder
-5. The extension will appear in your toolbar
-
----
-
-## ⚙️ Requirements
-
-- Your **AccessAI backend must be running** on `http://localhost:5000`
-- Start it with: `npm run dev` (from the root `AccessAI/` folder)
+1. Open Chrome and navigate to: `chrome://extensions`
+2. Enable **Developer mode** toggle in the top-right corner.
+3. Click **"Load unpacked"**.
+4. Select the `accessai-extension` folder.
+5. The extension is now loaded and ready.
 
 ---
 
-## 🎯 How to Use
+## 🎯 Features
 
-1. Go to **any website** (e.g., Wikipedia, news articles)
-2. **Select any text** with your mouse
-3. A small yellow **⚡ AccessAI** button appears near your cursor
-4. **Click the button**
-5. A clean popup appears with the **Simplified** result
-6. Switch tabs: **Simplify → Explain → Summary**
-7. Click **🔊 Speak** to hear the result read aloud
-8. Click **🌐 Translate** to translate result into Hindi
-9. Click **✕** or anywhere outside to close
-
----
-
-## 🔌 API Endpoints Used
-
-| Feature   | Method | Endpoint         | Body                        |
-|-----------|--------|------------------|-----------------------------|
-| Simplify  | POST   | /api/chat        | `{ text, type: "simplify" }`|
-| Explain   | POST   | /api/chat        | `{ text, type: "explain" }` |
-| Summarize | POST   | /api/chat        | `{ text, type: "summarize"}`|
-| Translate | POST   | /api/translate   | `{ text, targetLanguage }`  |
+1. **Text Selection Trigger**: Select any text on any webpage to reveal the floating AccessAI trigger.
+2. **AI Text Tools**:
+   - **Simplify**: Transforms dense or technical language into friendly, easy-to-read sentences.
+   - **Explain**: Breaks down complex concepts with clear analogies and step-by-step points.
+   - **Summarize**: Condenses large articles into scannable bullet points.
+3. **Multi-Language Translation**: Instant translation into 90+ languages with search filtering and persistent language preference.
+4. **Natural Text-to-Speech (TTS)**: High-quality voice playback with speed and pitch optimization.
+5. **Ask This Page (Voice Assistant)**: Real-time speech recognition allowing users to ask questions about the active webpage's context.
+6. **Authentication & Session Persistence**: Seamless token synchronization with the AccessAI platform via `chrome.storage`.
 
 ---
 
-## 🛑 Troubleshooting
+## 🔒 Chrome Web Store Permissions Justification
 
-| Problem                        | Fix                                                   |
-|-------------------------------|-------------------------------------------------------|
-| Button doesn't appear         | Make sure you selected 3+ characters of text          |
-| "Cannot reach backend"        | Start the backend: `npm run dev`                      |
-| Extension not loading         | Check Developer Mode is ON in chrome://extensions     |
-| Icons broken                  | Ignored in dev mode — doesn't affect functionality    |
+| Permission | Scope | Justification |
+|---|---|---|
+| `storage` | Browser Storage | Persists user language preferences and optional authentication session across browser restarts. |
+| `host_permissions: https://accessai-backend-lx57.onrender.com/*` | API Calls | Enables secure HTTPS communication with the production AccessAI backend for AI inference. |
+
+---
+
+## 📦 Chrome Web Store Submission Checklist
+
+- [x] **Manifest V3 Compliant**: Uses standard MV3 service worker, declarative content scripts, and action popup.
+- [x] **Zero Localhost References**: All API calls point to the production HTTPS backend.
+- [x] **Minimum Privilege Principle**: Only requests `storage` permission and production backend host permission.
+- [x] **Self-Contained Offline Assets**: Zero remote CDN font or script references.
+- [x] **Strict CSP Compliant**: No `eval()`, inline scripts, or remote code execution.
+- [x] **Full DOM Sanitization**: Complete XSS prevention across all UI elements.
+- [x] **Icons Provided**: Valid 16x16, 48x48, and 128x128 PNG icons.
+
+---
+
+## 🌐 Production API Endpoints
+
+- **Health Check**: `GET https://accessai-backend-lx57.onrender.com/`
+- **Simplify**: `POST https://accessai-backend-lx57.onrender.com/api/simplify`
+- **Explain**: `POST https://accessai-backend-lx57.onrender.com/api/explain`
+- **Summarize**: `POST https://accessai-backend-lx57.onrender.com/api/summarize`
+- **Translate**: `POST https://accessai-backend-lx57.onrender.com/api/translate`
+- **Ask Page**: `POST https://accessai-backend-lx57.onrender.com/api/ask-page`
+- **Auth Login**: `POST https://accessai-backend-lx57.onrender.com/api/auth/login`
+- **Auth Signup**: `POST https://accessai-backend-lx57.onrender.com/api/auth/signup`
+- **Auth Session**: `GET https://accessai-backend-lx57.onrender.com/api/auth/me`

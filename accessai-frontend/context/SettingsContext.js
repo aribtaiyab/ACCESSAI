@@ -5,28 +5,28 @@ import { getSettings, updateSettings } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 const defaultSettings = {
-  font_size: 16,
-  speech_rate: 1.0,
-  dyslexia_mode: false,
-  high_contrast: false,
-  dark_mode: false,
+  font_size:      16,
+  speech_rate:    1.0,
+  dyslexia_mode:  false,
+  high_contrast:  false,
+  dark_mode:      false,
 };
 
 const SettingsContext = createContext({
-  settings: defaultSettings,
+  settings:      defaultSettings,
   updateSetting: () => {},
-  isSaving: false,
+  isSaving:      false,
 });
 
 export const useSettings = () => useContext(SettingsContext);
 
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(defaultSettings);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [settings,  setSettings]  = useState(defaultSettings);
+  const [isSaving,  setIsSaving]  = useState(false);
+  const [isLoaded,  setIsLoaded]  = useState(false);
   const saveTimeoutRef = useRef(null);
 
-  // Load initial settings
+  // Load initial settings from API
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -34,8 +34,8 @@ export function SettingsProvider({ children }) {
         if (res.success && res.data) {
           setSettings(prev => ({ ...prev, ...res.data }));
         }
-      } catch (error) {
-        console.error('Failed to load settings:', error);
+      } catch {
+        // Silently fall back to defaults if not authenticated or server unavailable
       } finally {
         setIsLoaded(true);
       }
@@ -43,51 +43,32 @@ export function SettingsProvider({ children }) {
     loadSettings();
   }, []);
 
-  // Apply settings globally to the document
+  // Apply settings to the document root
   useEffect(() => {
-    if (!isLoaded) return;
-    
+    if (!isLoaded || typeof document === 'undefined') return;
+
     const root = document.documentElement;
-    
+
     // Font Size
     root.style.fontSize = `${settings.font_size}px`;
-    
-    // Dyslexia Mode
-    if (settings.dyslexia_mode) {
-      root.classList.add('dyslexia-mode');
-    } else {
-      root.classList.remove('dyslexia-mode');
-    }
-    
-    // High Contrast Mode
-    if (settings.high_contrast) {
-      root.classList.add('high-contrast-mode');
-    } else {
-      root.classList.remove('high-contrast-mode');
-    }
-    
-    // Dark Mode
-    if (settings.dark_mode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
 
+    // Dyslexia Mode
+    root.classList.toggle('dyslexia-mode',      Boolean(settings.dyslexia_mode));
+    root.classList.toggle('high-contrast-mode', Boolean(settings.high_contrast));
+    root.classList.toggle('dark',               Boolean(settings.dark_mode));
   }, [settings, isLoaded]);
 
   const updateSetting = useCallback((key, value) => {
     setSettings((prev) => {
       const newSettings = { ...prev, [key]: value };
 
-      // Debounced API call
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      
+
       setIsSaving(true);
       saveTimeoutRef.current = setTimeout(async () => {
         try {
           await updateSettings(newSettings);
-        } catch (error) {
-          console.error('Failed to save settings:', error);
+        } catch {
           toast.error('Failed to save settings automatically');
         } finally {
           setIsSaving(false);
@@ -101,7 +82,7 @@ export function SettingsProvider({ children }) {
   return (
     <SettingsContext.Provider value={{ settings, updateSetting, isSaving }}>
       {children}
-      
+
       {/* Saving Indicator */}
       {isSaving && (
         <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm shadow-lg z-50 animate-pulse">
@@ -109,14 +90,17 @@ export function SettingsProvider({ children }) {
         </div>
       )}
 
-      <style jsx global>{`
-        .dyslexia-mode {
+      {/* FIX (Bug #11): Replaced <style jsx global> (styled-jsx, not available in App Router)
+          with a standard <style> tag. The global modifier is not needed here since
+          these classes are applied to document.documentElement directly. */}
+      <style>{`
+        .dyslexia-mode * {
           font-family: 'Comic Sans MS', 'OpenDyslexic', sans-serif !important;
           letter-spacing: 0.05em;
           word-spacing: 0.1em;
           line-height: 1.8 !important;
         }
-        
+
         .high-contrast-mode {
           filter: contrast(150%) saturate(120%) brightness(95%);
         }
