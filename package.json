@@ -13,5 +13,8 @@
   "devDependencies": {
     "concurrently": "^8.2.0"
   },
-  "postinstall": "npm run install-all"
+  "postinstall": "npm run install-all",
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
 }
