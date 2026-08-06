@@ -22,7 +22,7 @@ const AuthContext = createContext({
   checkSession: async () => {},
 });
 
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://accessai-backend-lx57.onrender.com').replace(/\/$/, '');
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

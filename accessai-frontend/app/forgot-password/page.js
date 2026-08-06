@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://accessai-backend-lx57.onrender.com').replace(/\/$/, '');
       const response = await axios.post(
         `${backendUrl}/api/auth/forgot-password`,
         data,
