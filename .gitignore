@@ -26,6 +26,12 @@ yarn-error.log*
 logs
 *.log
 
+# Database
+*.db
+*.sqlite
+*.sqlite3
+accessai-backend/data/*.db
+
 # OS files
 .DS_Store
 Thumbs.db

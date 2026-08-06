@@ -1,15 +1,6 @@
 'use client';
 
 import axios from 'axios';
-import { createBrowserClient } from '@supabase/ssr';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-// Create client only if variables exist to avoid crashing
-export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
-  : { auth: { getSession: async () => ({ data: { session: null } }), signOut: () => {} } };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 

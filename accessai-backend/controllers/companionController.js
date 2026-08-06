@@ -170,7 +170,7 @@ Maximum 2-3 short sentences. If you need to translate or check safety, do it sim
     );
 
     const answer = response.data?.choices?.[0]?.message?.content?.trim() || "I couldn't think of an answer. Let's try again!";
-    return res.json({ success: true, answer });
+    return res.json({ success: true, answer, data: answer });
 
   } catch (err) {
     console.error('[Companion] chat error:', err.response?.data || err.message);

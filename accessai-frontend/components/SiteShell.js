@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
@@ -28,8 +29,8 @@ export default function SiteShell({ children }) {
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3 text-[1.05rem] font-semibold tracking-tight text-textPrimary">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-white p-1 shadow-sm">
-              <img src="/logo.png" alt="AccessAI logo" className="h-full w-full object-contain" />
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-white p-1 shadow-sm overflow-hidden relative">
+              <Image src="/logo.png" alt="AccessAI logo" width={32} height={32} className="h-full w-full object-contain" priority />
             </span>
             <span>AccessAI</span>
           </Link>
