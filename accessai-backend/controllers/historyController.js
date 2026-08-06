@@ -1,43 +1,27 @@
 /**
  * FILE: controllers/historyController.js
- * 1. WHAT: Manage request history using Supabase.
- * 2. WHY: Users can view and delete their past AI requests.
+ * 1. WHAT: Manage request history using SQLite database.
+ * 2. WHY: Users can view, save, and delete their past AI requests.
  * 3. HOW: Called by historyRoutes.js.
  */
 
-const supabase = require('../lib/supabaseClient');
+const crypto = require('crypto');
+const db = require('../config/database');
 
 exports.getHistory = async (req, res) => {
   try {
     const userId = req.user?.id;
 
-    console.log(`📚 [HISTORY] Fetch request received`);
-    console.log(`📚 [HISTORY] User ID: ${userId}`);
-
     if (!userId) {
-      console.error(`❌ [HISTORY] No user ID provided`);
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    if (!supabase) {
-      console.error(`❌ [HISTORY] Supabase not available`);
-      return res.status(500).json({ success: false, error: 'Database not available' });
-    }
+    const rows = await db.all(
+      'SELECT * FROM history WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
 
-    console.log(`🔍 [HISTORY] Querying database for user history...`);
-    const { data, error } = await supabase
-      .from('history')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error(`❌ [HISTORY] Supabase query error:`, error);
-      return res.status(500).json({ success: false, error: error.message });
-    }
-
-    console.log(`✅ [HISTORY] Successfully fetched ${data?.length || 0} history items`);
-    return res.json({ success: true, data });
+    return res.json({ success: true, data: rows || [] });
   } catch (error) {
     console.error('❌ [HISTORY] Get history error:', error);
     return res.status(500).json({ success: false, error: 'Failed to get history' });
@@ -49,41 +33,34 @@ exports.saveHistory = async (req, res) => {
     const userId = req.user?.id;
     const { type, input_text, output_text } = req.body;
 
-    // Fallback if frontend sends different casing
     const input = input_text || req.body.input;
     const output = output_text || req.body.output;
 
-    console.log(`📝 [HISTORY] Save request received`);
-    console.log("Saving history:", input);
-
     if (!userId || !type || !input || !output) {
-      console.error(`❌ [HISTORY] Missing required fields`);
-      return res.status(400).json({ success: false, error: 'User ID, type, input text, and output text are required' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'User ID, type, input text, and output text are required' 
+      });
     }
 
-    if (!supabase) {
-      console.error(`❌ [HISTORY] Supabase not available`);
-      return res.status(500).json({ success: false, error: 'Database not available' });
-    }
+    const historyId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
 
-    console.log(`💾 [HISTORY] Inserting into database...`);
-    const { data, error } = await supabase
-      .from('history')
-      .insert([{ 
-        user_id: userId, 
-        type, 
-        input: input, 
-        output: output,
-        created_at: new Date()
-      }]);
+    await db.run(
+      `INSERT INTO history (id, user_id, type, input, output, created_at) 
+       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+      [historyId, userId, type, input, output]
+    );
 
-    if (error) {
-      console.error(`❌ [HISTORY] Supabase insert error:`, error);
-      return res.status(500).json({ success: false, error: error.message });
-    }
+    const savedRecord = {
+      id: historyId,
+      user_id: userId,
+      type,
+      input,
+      output,
+      created_at: new Date().toISOString(),
+    };
 
-    console.log(`✅ [HISTORY] Successfully saved`, { data });
-    return res.json({ success: true, data });
+    return res.json({ success: true, data: savedRecord });
   } catch (error) {
     console.error('❌ [HISTORY] Save history error:', error);
     return res.status(500).json({ success: false, error: 'Failed to save history' });
@@ -99,19 +76,10 @@ exports.deleteHistory = async (req, res) => {
       return res.status(400).json({ success: false, error: 'User ID and history ID are required' });
     }
 
-    if (!supabase) {
-      return res.status(500).json({ success: false, error: 'Database not available' });
-    }
-
-    const { error } = await supabase
-      .from('history')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', userId);
-
-    if (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
+    await db.run(
+      'DELETE FROM history WHERE id = ? AND user_id = ?',
+      [id, userId]
+    );
 
     return res.json({ success: true });
   } catch (error) {
@@ -128,18 +96,10 @@ exports.clearHistory = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    if (!supabase) {
-      return res.status(500).json({ success: false, error: 'Database not available' });
-    }
-
-    const { error } = await supabase
-      .from('history')
-      .delete()
-      .eq('user_id', userId);
-
-    if (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
+    await db.run(
+      'DELETE FROM history WHERE user_id = ?',
+      [userId]
+    );
 
     return res.json({ success: true, message: 'All history cleared' });
   } catch (error) {

@@ -1,11 +1,12 @@
 /**
  * FILE: controllers/userController.js
- * 1. WHAT: User profile management using Supabase.
- * 2. WHY: Allow users to update profile and password.
- * 3. HOW: Called by userRoutes.js.
+ * 1. WHAT: User profile management using persistent SQLite database and bcrypt.
+ * 2. WHY: Allows authenticated users to view/update profile, change password, and delete account.
+ * 3. HOW: Called by userRoutes.js with authMiddleware.
  */
 
-const supabase = require('../lib/supabaseClient');
+const bcrypt = require('bcryptjs');
+const db = require('../config/database');
 
 exports.getProfile = async (req, res) => {
   try {
@@ -15,29 +16,16 @@ exports.getProfile = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    // Fetch user profile from Supabase
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    const user = await db.get(
+      'SELECT id, email, name, created_at, updated_at FROM users WHERE id = ?',
+      [userId]
+    );
 
-    if (error) {
-      console.log('Fetching profile from users table failed, falling back to auth user', error.message);
-      return res.json({ success: true, data: req.user });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    // Return merged data to satisfy both usages
-    const mergedData = { 
-      ...req.user, 
-      ...data, 
-      user_metadata: { 
-        ...(req.user.user_metadata || {}), 
-        name: data.name || req.user.user_metadata?.name 
-      } 
-    };
-
-    return res.json({ success: true, data: mergedData });
+    return res.json({ success: true, data: user });
   } catch (error) {
     console.error('Get profile error:', error);
     return res.status(500).json({ success: false, error: 'Failed to get profile' });
@@ -53,40 +41,35 @@ exports.updateProfile = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const updatePayload = {};
-    if (email) updatePayload.email = email;
-    if (name) {
-      updatePayload.user_metadata = { ...(req.user.user_metadata || {}), name };
+    const current = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
+    if (!current) {
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    console.log("Saving profile...");
+    const newEmail = email ? email.trim().toLowerCase() : current.email;
+    const newName = name !== undefined ? name.trim() : current.name;
 
-    // Update in users table
-    const { error: dbError } = await supabase
-      .from('users')
-      .update({ name, email })
-      .eq('id', userId);
-      
-    if (dbError) {
-      console.error('DB Update error:', dbError);
-    }
-
-    let returnedUser = { id: userId, email, user_metadata: { name } };
-
-    if (supabase.auth.admin) {
-      const { data, error } = await supabase.auth.admin.updateUserById(userId, updatePayload);
-      if (error) {
-        // If DB update succeeded but auth update failed, log it but don't fail completely
-        console.error('Auth Update error:', error);
-      } else if (data && data.user) {
-        returnedUser = data.user;
+    // Check if new email conflicts with another user
+    if (newEmail !== current.email) {
+      const existing = await db.get('SELECT id FROM users WHERE email = ? AND id != ?', [newEmail, userId]);
+      if (existing) {
+        return res.status(400).json({ success: false, error: 'Email is already in use by another account.' });
       }
-    } else {
-      console.warn('Profile updates via auth.admin are currently disabled (Admin client not initialized)');
     }
 
-    return res.json({ success: true, data: returnedUser });
+    await db.run(
+      'UPDATE users SET email = ?, name = ?, updated_at = datetime(\'now\') WHERE id = ?',
+      [newEmail, newName, userId]
+    );
 
+    const updatedUser = {
+      id: userId,
+      email: newEmail,
+      name: newName,
+      created_at: current.created_at,
+    };
+
+    return res.json({ success: true, data: updatedUser });
   } catch (error) {
     console.error('Update profile error:', error);
     return res.status(500).json({ success: false, error: 'Failed to update profile' });
@@ -96,37 +79,42 @@ exports.updateProfile = async (req, res) => {
 exports.updatePassword = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const userEmail = req.user?.email;
     const { currentPassword, newPassword } = req.body;
 
     if (!userId || !currentPassword || !newPassword) {
-      return res.status(400).json({ success: false, error: 'Current and new password are required' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Current and new password are required.' 
+      });
     }
 
-    // Verify current password first by attempting a login
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: userEmail,
-      password: currentPassword,
-    });
-
-    if (signInError) {
-      return res.status(401).json({ success: false, error: 'Incorrect current password' });
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'New password must be at least 6 characters long.' 
+      });
     }
 
-    if (!supabase.auth.admin) {
-      return res.status(500).json({ success: false, error: 'Password updates are currently disabled (Admin client not initialized)' });
+    const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found.' });
     }
 
-    const { error } = await supabase.auth.admin.updateUserById(userId, { password: newPassword });
-
-    if (error) {
-      return res.status(400).json({ success: false, error: error.message });
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, error: 'Incorrect current password.' });
     }
 
-    return res.json({ success: true, message: 'Password updated successfully' });
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.run(
+      'UPDATE users SET password = ?, updated_at = datetime(\'now\') WHERE id = ?',
+      [hashedPassword, userId]
+    );
+
+    return res.json({ success: true, message: 'Password updated successfully.' });
   } catch (error) {
     console.error('Update password error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to update password' });
+    return res.status(500).json({ success: false, error: 'Failed to update password.' });
   }
 };
 
@@ -138,25 +126,11 @@ exports.deleteAccount = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    // Delete user data first
-    await supabase.from('history').delete().eq('user_id', userId);
-    await supabase.from('settings').delete().eq('user_id', userId);
-    await supabase.from('org_audits').delete().eq('user_id', userId);
+    await db.run('DELETE FROM users WHERE id = ?', [userId]);
 
-    // Then delete user
-    if (!supabase.auth.admin) {
-      return res.status(500).json({ success: false, error: 'Account deletion is currently disabled (Admin client not initialized)' });
-    }
-
-    const { error } = await supabase.auth.admin.deleteUser(userId);
-
-    if (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
-
-    return res.json({ success: true, message: 'Account deleted successfully' });
+    return res.json({ success: true, message: 'Account deleted successfully.' });
   } catch (error) {
     console.error('Delete account error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to delete account' });
+    return res.status(500).json({ success: false, error: 'Failed to delete account.' });
   }
 };

@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "AccessAI",
-  "version": "1.0",
+  "version": "2.0",
+  "description": "Premium AI accessibility assistant — Simplify, Explain, Summarize & Ask any page.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -17,24 +18,19 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "css": [
-        "styles.css"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
       "run_at": "document_idle"
     }
   ],
   "action": {
-    "default_title": "AccessAI Reading Assistant"
+    "default_popup": "popup.html",
+    "default_title": "AccessAI — AI Accessibility Assistant"
   },
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
     "128": "icons/icon128.png"
   }
 }

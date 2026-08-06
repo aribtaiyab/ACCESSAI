@@ -14,4 +14,7 @@ router.post('/explain', aiController.explain);
 router.post('/summarize', aiController.summarize);
 router.post('/translate', aiController.translate);
 
+// Voice Page Assistant — NEW (additive, no existing routes changed)
+router.post('/ask-page', aiController.askPage);
+
 module.exports = router;

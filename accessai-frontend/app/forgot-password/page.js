@@ -38,30 +38,35 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-6">
-      <div className="w-full max-w-md bg-white rounded-3xl border border-border p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-center mb-6">Forgot Password</h1>
-        <p className="text-textSecondary text-sm text-center mb-6">Enter your email to receive a password reset link.</p>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              {...register('email', { required: 'Email is required' })}
-              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {errors.email && <p className="text-error text-sm mt-1">{errors.email.message}</p>}
+    <main className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto flex max-w-5xl items-center justify-center">
+        <div className="w-full max-w-md rounded-[2rem] border border-border bg-white/95 p-8 shadow-[0_22px_60px_-28px_rgba(23,23,23,0.3)] sm:p-10">
+          <div className="mb-6 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.35em] text-primary">AccessAI</p>
+            <h1 className="mt-3 text-3xl font-semibold text-textPrimary">Forgot Password</h1>
+            <p className="mt-2 text-sm text-textSecondary">Enter your email to receive a password reset link.</p>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-black py-2 rounded-lg font-semibold hover:bg-hover disabled:opacity-50"
-          >
-            {loading ? 'Sending...' : 'Send Reset Email'}
-          </button>
-        </form>
-        <div className="mt-4 text-center">
-          <Link href="/login" className="text-primary hover:underline">Back to login</Link>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-textPrimary">Email</label>
+              <input
+                type="email"
+                {...register('email', { required: 'Email is required' })}
+                className="w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-textPrimary shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {errors.email && <p className="mt-1 text-sm text-error">{errors.email.message}</p>}
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-black transition hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? 'Sending...' : 'Send Reset Email'}
+            </button>
+          </form>
+          <div className="mt-5 text-center text-sm text-textSecondary">
+            <Link href="/login" className="font-medium text-primary hover:underline">Back to login</Link>
+          </div>
         </div>
       </div>
     </main>

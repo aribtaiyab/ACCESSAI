@@ -32,8 +32,8 @@ function LoadingOverlay() {
       {/* Pulsing brain ring */}
       <div style={{
         width: 72, height: 72, borderRadius: '50%',
-        border: '4px solid #F5C518',
-        boxShadow: '0 0 24px #F5C51888',
+        border: '4px solid var(--color-primary)',
+        boxShadow: '0 0 24px color-mix(in srgb, var(--color-primary) 45%, transparent)',
         animation: 'pulse 1.4s ease-in-out infinite',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 32, marginBottom: 20,
@@ -45,13 +45,13 @@ function LoadingOverlay() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {[0, 1, 2].map((i) => (
           <div key={i} style={{
-            width: 10, height: 10, borderRadius: '50%', backgroundColor: '#F5C518',
+            width: 10, height: 10, borderRadius: '50%', backgroundColor: 'var(--color-primary)',
             animation: `dotBounce 1.2s ease-in-out ${i * 0.2}s infinite`,
           }} />
         ))}
       </div>
 
-      <p style={{ color: '#fff', fontWeight: 600, fontSize: 15, letterSpacing: 0.5 }}>
+      <p style={{ color: 'var(--color-surface)', fontWeight: 600, fontSize: 15, letterSpacing: 0.5 }}>
         Loading...
       </p>
     </div>

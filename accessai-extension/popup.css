@@ -1,7 +1,345 @@
 /*
- * FILE: popup.css
- * 1. WHAT: Styles for the extension popup.
- * 2. WHY: Ensures the popup matches the AccessAI design system.
- * 3. HOW: Included in popup.html.
+ * popup.css — AccessAI Extension Toolbar Popup (Premium 2.0)
+ * Opens when user clicks the extension icon in Chrome toolbar.
+ * Full dark-warm theme matching the content overlay design system.
  */
-body { width: 300px; padding: 16px; font-family: 'Inter', sans-serif; background: #F7F6F2; }
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --g:      #F5C518;
+  --g2:     #D4A017;
+  --g-dim:  rgba(245,197,24,.11);
+  --g-glow: rgba(245,197,24,.28);
+  --g-ring: rgba(245,197,24,.22);
+
+  --bg:     #111117;
+  --s1:     #17171E;
+  --s2:     #1D1D25;
+  --s3:     #23232C;
+
+  --t1:     #F2F0EA;
+  --t2:     rgba(242,240,234,.52);
+  --t3:     rgba(242,240,234,.28);
+
+  --bd:     rgba(255,255,255,.07);
+  --bd-g:   rgba(245,197,24,.22);
+
+  --r-sm:   9px;
+  --r-md:   13px;
+  --r-lg:   18px;
+  --r-pill: 100px;
+
+  --ease:   cubic-bezier(.4,0,.2,1);
+  --dur:    180ms;
+}
+
+html, body {
+  width: 298px;
+  background: var(--bg);
+  color: var(--t1);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  animation: pop-in 220ms cubic-bezier(.34,1.4,.64,1) both;
+}
+
+/* ── Wrapper ────────────────────────────────────────────────────────────────── */
+.aai-popup-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════════════════ */
+.aai-header {
+  position: relative;
+  padding: 15px 15px 12px;
+  background:
+    linear-gradient(170deg, rgba(245,197,24,.05) 0%, transparent 60%),
+    var(--s1);
+  border-bottom: 1px solid var(--bd);
+}
+
+/* Gold top stripe */
+.aai-header::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1.5px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(245,197,24,.55) 30%,
+    var(--g) 50%,
+    rgba(245,197,24,.55) 70%,
+    transparent 100%
+  );
+}
+
+.aai-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 5px;
+}
+
+/* Premium logo mark — dark lightning on gold */
+.aai-logo-icon {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--g) 0%, var(--g2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow:
+    0 2px 12px rgba(245,197,24,.45),
+    0 0 0 1px rgba(245,197,24,.25);
+  overflow: hidden;
+  transition: box-shadow var(--dur) var(--ease);
+}
+
+.aai-logo-icon:hover {
+  box-shadow:
+    0 4px 20px rgba(245,197,24,.65),
+    0 0 0 1px rgba(245,197,24,.5);
+}
+
+/* CSS-only bolt */
+.aai-logo-icon::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  background: #0E0E12;
+  clip-path: polygon(62% 0%, 30% 46%, 62% 42%, 28% 100%, 58% 56%, 22% 60%);
+}
+
+.aai-brand-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--g);
+  letter-spacing: .3px;
+  line-height: 1;
+}
+
+.aai-tagline {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--t3);
+  padding-left: 37px;
+  letter-spacing: .05px;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SECTION LABEL
+═══════════════════════════════════════════════════════════════════ */
+.aai-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: rgba(245,197,24,.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 9px;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FEATURE CARDS
+═══════════════════════════════════════════════════════════════════ */
+.aai-features-section {
+  padding: 13px 14px 11px;
+  border-bottom: 1px solid var(--bd);
+}
+
+.aai-feature-row {
+  display: flex;
+  gap: 7px;
+}
+
+.aai-feature-card {
+  flex: 1;
+  background: var(--s2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r-md);
+  padding: 10px 6px 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.aai-feature-card:hover {
+  background: var(--s3);
+  border-color: var(--bd-g);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 12px rgba(245,197,24,.06);
+}
+
+.aai-feat-icon {
+  font-size: 18px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 4px rgba(245,197,24,.2));
+}
+
+.aai-feat-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--t2);
+  text-align: center;
+  letter-spacing: .1px;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   VOICE SECTION
+═══════════════════════════════════════════════════════════════════ */
+.aai-voice-section {
+  padding: 11px 14px 10px;
+  border-bottom: 1px solid var(--bd);
+}
+
+.aai-voice-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--g-dim);
+  border: 1px solid var(--bd-g);
+  border-radius: var(--r-md);
+  padding: 11px 13px;
+  transition:
+    background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.aai-voice-card:hover {
+  background: rgba(245,197,24,.16);
+  box-shadow: 0 0 18px rgba(245,197,24,.1);
+}
+
+.aai-voice-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(245,197,24,.35));
+}
+
+.aai-voice-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--g);
+  margin-bottom: 3px;
+  line-height: 1;
+}
+
+.aai-voice-desc {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--t3);
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HOW-TO STEPS
+═══════════════════════════════════════════════════════════════════ */
+.aai-howto {
+  padding: 11px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--bd);
+}
+
+.aai-howto-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.aai-step-num {
+  flex-shrink: 0;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: var(--g-dim);
+  border: 1px solid var(--bd-g);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--g);
+  margin-top: 1px;
+  line-height: 1;
+}
+
+.aai-step-text {
+  font-size: 11px;
+  color: var(--t2);
+  line-height: 1.5;
+}
+
+.aai-step-text strong {
+  color: var(--g);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════════════════ */
+.aai-footer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px 11px;
+  background: var(--s1);
+}
+
+.aai-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ADE80;
+  box-shadow: 0 0 8px rgba(74,222,128,.6);
+  flex-shrink: 0;
+  animation: aai-blink 2.8s ease-in-out infinite;
+}
+
+.aai-status-text {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--t3);
+  letter-spacing: .05px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   KEYFRAMES
+═══════════════════════════════════════════════════════════════════ */
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(.97) translateY(4px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0);   }
+}
+
+@keyframes aai-blink {
+  0%,100% { opacity: 1;   }
+  50%      { opacity: .45; }
+}

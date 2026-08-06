@@ -1,12 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AccessAI</title>
-  <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <h1>AccessAI</h1>
-  <div id="output"></div>
+  <div class="aai-popup-wrap">
+
+    <!-- ── Header ─────────────────────────────────────────────────────── -->
+    <div class="aai-header">
+      <div class="aai-brand">
+        <div class="aai-logo-icon" aria-hidden="true"></div>
+        <span class="aai-brand-name">AccessAI</span>
+      </div>
+      <p class="aai-tagline">Your AI Accessibility Companion</p>
+    </div>
+
+    <!-- ── Text Tools ─────────────────────────────────────────────────── -->
+    <div class="aai-features-section">
+      <p class="aai-section-label">Text Tools</p>
+      <div class="aai-feature-row">
+        <div class="aai-feature-card">
+          <span class="aai-feat-icon" aria-hidden="true">✨</span>
+          <span class="aai-feat-label">Simplify</span>
+        </div>
+        <div class="aai-feature-card">
+          <span class="aai-feat-icon" aria-hidden="true">💡</span>
+          <span class="aai-feat-label">Explain</span>
+        </div>
+        <div class="aai-feature-card">
+          <span class="aai-feat-icon" aria-hidden="true">📝</span>
+          <span class="aai-feat-label">Summarize</span>
+        </div>
+        <div class="aai-feature-card">
+          <span class="aai-feat-icon" aria-hidden="true">🌐</span>
+          <span class="aai-feat-label">Translate</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Voice Assistant ────────────────────────────────────────────── -->
+    <div class="aai-voice-section">
+      <p class="aai-section-label">Voice Assistant</p>
+      <div class="aai-voice-card">
+        <span class="aai-voice-icon" aria-hidden="true">🎙</span>
+        <div class="aai-voice-info">
+          <p class="aai-voice-title">Ask This Page</p>
+          <p class="aai-voice-desc">Select text on any page to activate AccessAI tools and voice assistant</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── How To Use ─────────────────────────────────────────────────── -->
+    <div class="aai-howto" aria-label="How to use AccessAI">
+      <div class="aai-howto-step">
+        <span class="aai-step-num" aria-hidden="true">1</span>
+        <span class="aai-step-text">Select any text on a webpage</span>
+      </div>
+      <div class="aai-howto-step">
+        <span class="aai-step-num" aria-hidden="true">2</span>
+        <span class="aai-step-text">Click the <strong>AccessAI</strong> pill button that appears</span>
+      </div>
+      <div class="aai-howto-step">
+        <span class="aai-step-num" aria-hidden="true">3</span>
+        <span class="aai-step-text">Simplify, Explain, Summarize or Ask the page a question</span>
+      </div>
+    </div>
+
+    <!-- ── Status Footer ──────────────────────────────────────────────── -->
+    <div class="aai-footer">
+      <span class="aai-status-dot" aria-hidden="true"></span>
+      <span class="aai-status-text">Active on all pages</span>
+    </div>
+
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>

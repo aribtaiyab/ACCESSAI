@@ -1,51 +1,43 @@
 /**
  * FILE: controllers/authController.js
  * 
- * 1. WHAT: Handles authentication-related logic using Supabase.
- * 2. WHY: Centralizes auth logic for cleaner route definitions.
- * 3. HOW: Imported and called by authRoutes.js.
- * 
- * CRITICAL: Uses admin.createUser with email_confirm: true to auto-confirm email
- * This prevents users from getting "email not confirmed" errors.
+ * 1. WHAT: Authentication controller for signup, login, session, password reset, and logout.
+ * 2. WHY: Handles secure user registration, bcrypt password authentication, and JWT sessions.
+ * 3. HOW: Uses userService and jwtService.
  */
 
-const supabase = require('../lib/supabaseClient');
+const userService = require('../services/userService');
+const { generateToken } = require('../services/jwtService');
 
 exports.signup = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Email and password are required' });
-    }
-
-    let data, error;
-    if (supabase.auth.admin) {
-      const res = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email and password are required.' 
       });
-      data = res.data;
-      error = res.error;
-    } else {
-      console.warn('Admin client not available, using standard signUp (email confirmation may be required)');
-      const res = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      data = res.data;
-      error = res.error;
     }
 
-    if (error) {
-      return res.status(400).json({ success: false, error: error.message });
-    }
+    const user = await userService.createUser({ email, password, name });
+    const token = generateToken(user);
 
-    return res.status(201).json({ success: true, data: { user: data.user } });
+    return res.status(201).json({
+      success: true,
+      message: 'Account created successfully.',
+      data: {
+        user,
+        token,
+        access_token: token,
+      },
+    });
   } catch (error) {
-    console.error('Signup error:', error);
-    return res.status(500).json({ success: false, error: 'Signup failed' });
+    console.error('Signup error:', error.message);
+    return res.status(400).json({ 
+      success: false, 
+      error: error.message || 'Signup failed.' 
+    });
   }
 };
 
@@ -54,80 +46,122 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Email and password are required' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email and password are required.' 
+      });
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      return res.status(400).json({ success: false, error: error.message });
+    const user = await userService.validateUser({ email, password });
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid email or password.' 
+      });
     }
 
-    return res.status(200).json({ 
-      success: true, 
-      data: { 
-        user: data.user, 
-        session: data.session,
-        access_token: data.session?.access_token 
-      } 
+    const token = generateToken(user);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful.',
+      data: {
+        user,
+        token,
+        access_token: token,
+      },
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({ success: false, error: 'Login failed' });
+    console.error('Login error:', error.message);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Login failed. Please try again.' 
+    });
   }
 };
+
+exports.getMe = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Not authenticated.' 
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: req.user,
+      },
+    });
+  } catch (error) {
+    console.error('Get session error:', error.message);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Failed to retrieve session.' 
+    });
+  }
+};
+
+exports.getSession = exports.getMe;
 
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email is required.' 
+      });
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const token = await userService.createPasswordResetToken(email);
 
-    if (error) {
-      return res.status(400).json({ success: false, error: error.message });
-    }
-
-    return res.status(200).json({ success: true, message: 'Password reset email sent' });
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Password reset link generated.',
+      resetToken: token // Useful for local testing/dev
+    });
   } catch (error) {
-    console.error('Forgot password error:', error);
-    return res.status(500).json({ success: false, error: 'Forgot password failed' });
+    console.error('Forgot password error:', error.message);
+    return res.status(400).json({ 
+      success: false, 
+      error: error.message || 'Forgot password request failed.' 
+    });
   }
 };
 
 exports.resetPassword = async (req, res) => {
-  // This would typically be handled on the frontend with the reset token
-  return res.status(200).json({ success: true, message: 'Reset password endpoint' });
-};
-
-exports.verifyEmail = async (req, res) => {
-  // Supabase handles email verification automatically
-  return res.status(200).json({ success: true, message: 'Email verification handled by Supabase' });
-};
-
-exports.getSession = async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ success: false, error: 'No token provided' });
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Token and new password are required.' 
+      });
     }
 
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    await userService.resetPasswordWithToken(token, password);
 
-    if (error || !user) {
-      return res.status(401).json({ success: false, error: 'Invalid token' });
-    }
-
-    return res.status(200).json({ success: true, data: { user } });
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Password reset successfully. You can now log in.' 
+    });
   } catch (error) {
-    console.error('Get session error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to get session' });
+    console.error('Reset password error:', error.message);
+    return res.status(400).json({ 
+      success: false, 
+      error: error.message || 'Password reset failed.' 
+    });
   }
+};
+
+exports.logout = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'Logged out successfully.',
+  });
 };

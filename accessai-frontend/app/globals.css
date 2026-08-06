@@ -3,27 +3,31 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #F5C518;
-  --color-hover: #E0B800;
-  --color-background: #F7F6F2;
-  --color-surface: #FFFFFF;
-  --color-border: #E5E5E5;
-  --color-text-primary: #111111;
-  --color-text-secondary: #6B6B6B;
-  --color-success: #1D9E75;
-  --color-error: #E24B4A;
+  --color-primary: #C77A2E;
+  --color-hover: #A75F1F;
+  --color-background: #FCF6EA;
+  --color-surface: #FFFDF8;
+  --color-surface-muted: #F7EBD9;
+  --color-surface-elevated: #F3E2C6;
+  --color-border: #E8D8C1;
+  --color-text-primary: #2F241C;
+  --color-text-secondary: #7A6753;
+  --color-success: #4B7A56;
+  --color-error: #C55A3F;
 }
 
 .dark {
-  --color-primary: #F5C518;
-  --color-hover: #E0B800;
-  --color-background: #121212;
-  --color-surface: #1E1E1E;
-  --color-border: #333333;
-  --color-text-primary: #F5F5F5;
-  --color-text-secondary: #A0A0A0;
-  --color-success: #20B282;
-  --color-error: #F25C54;
+  --color-primary: #E8AE5A;
+  --color-hover: #D08A37;
+  --color-background: #221A14;
+  --color-surface: #2D221A;
+  --color-surface-muted: #3A2A20;
+  --color-surface-elevated: #493325;
+  --color-border: #6A4C34;
+  --color-text-primary: #F8ECDD;
+  --color-text-secondary: #D5B99F;
+  --color-success: #78A87C;
+  --color-error: #D9754F;
 }
 
 body {
@@ -32,14 +36,14 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Overrides for hardcoded utility classes in dark mode to preserve UI aesthetic */
-.dark .bg-white { background-color: var(--color-surface) !important; }
-.dark .bg-gray-50 { background-color: #181818 !important; }
-.dark .bg-gray-100 { background-color: #222222 !important; }
-.dark .bg-gray-200 { background-color: #333333 !important; }
-.dark .border-gray-200, .dark .border-gray-300 { border-color: var(--color-border) !important; }
-.dark input, .dark textarea, .dark select { 
-  background-color: var(--color-surface); 
-  color: var(--color-text-primary); 
-  border-color: var(--color-border); 
+/* Shared surface overrides to keep cards and panels aligned with the warm palette */
+.bg-white, .bg-surface { background-color: var(--color-surface) !important; }
+.bg-gray-50 { background-color: var(--color-surface-muted) !important; }
+.bg-gray-100 { background-color: var(--color-surface-elevated) !important; }
+.bg-gray-200 { background-color: var(--color-border) !important; }
+.border-gray-200, .border-gray-300 { border-color: var(--color-border) !important; }
+input, textarea, select {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
 }
